@@ -96,8 +96,8 @@ class MusiChrisComicEngine:
                 "-i", str(overlay_path),
                 "-filter_complex", 
                 "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1[bg]; "
-                "[bg][1:v]overlay=enable='between(t,0,2.5)',fade=t=out:st=2.5:d=0.5",
-                "-t", "3", "-c:v", "libx264", "-pix_fmt", "yuv420p", str(output_video)
+                "[bg][1:v]overlay=enable='between(t,0,3.5)',fade=t=out:st=3.5:d=0.5",
+                "-t", "4", "-c:v", "libx264", "-pix_fmt", "yuv420p", str(output_video)
             ]
         else:
             print("⚠️ Video intro no encontrado, usando master_intro_bg.png")
@@ -218,13 +218,13 @@ class MusiChrisComicEngine:
             # Zoompan corregido para verticalidad 9:16
             zoom_filter = (
                 "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,"
-                "zoompan=z='min(zoom+0.0015,1.5)':d=180:s=1080x1920:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'"
+                "zoompan=z='min(zoom+0.0015,1.5)':d=165:s=1080x1920:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'"
             )
             
             subprocess.run([
                 "ffmpeg", "-y", "-loop", "1", "-i", str(panel_img),
                 "-vf", f"{zoom_filter},fade=t=in:st=0:d=0.5",
-                "-t", "5", "-c:v", "libx264", "-pix_fmt", "yuv420p", str(vid_path)
+                "-t", "5.5", "-c:v", "libx264", "-pix_fmt", "yuv420p", str(vid_path)
             ], check=True)
             panel_vids.append(str(vid_path))
         return panel_vids
