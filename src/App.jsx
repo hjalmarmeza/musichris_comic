@@ -78,43 +78,48 @@ function App() {
     }
     
     try {
+      // Timeout de 15 segundos para la conexión
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
       const response = await fetch(`https://api.github.com/repos/${GH_REPO}/dispatches`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${GH_TOKEN.trim()}`,
+          'Authorization': `token ${GH_TOKEN.trim()}`,
           'Accept': 'application/vnd.github.v3+json',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           event_type: 'forge_comic',
           client_payload: payload
-        })
+        }),
+        signal: controller.signal
       });
+
+      clearTimeout(timeoutId);
 
       if (response.ok) {
         setStatus('✨ ¡LA FORJA HA COMENZADO!');
         setTimeout(() => {
           setIsForging(false);
-          setStoryTitle('');
-          setStoryIdea('');
           setSelectedSong(null);
           setShowSplash(true);
         }, 4000);
       } else {
         const errorData = await response.json().catch(() => ({}));
-        console.error('Error GitHub:', response.status, errorData);
         setStatus(`❌ ERROR ${response.status}: ${errorData.message || 'RECHAZADO'}`);
-        if (response.status === 401) {
+        if (response.status === 401 || response.status === 403) {
           localStorage.removeItem('GH_TOKEN');
-          setTimeout(() => window.location.reload(), 3000);
+          setTimeout(() => window.location.reload(), 4000);
         } else {
-          setTimeout(() => setIsForging(false), 5000);
+          setTimeout(() => setIsForging(false), 6000);
         }
       }
     } catch (err) {
-      console.error('Error conexión:', err);
-      setStatus('❌ ERROR DE CONEXIÓN (CORS/RED)');
-      setTimeout(() => setIsForging(false), 5000);
+      console.error('Error:', err);
+      const msg = err.name === 'AbortError' ? '⌛ TIEMPO EXCEDIDO (REVISA EL TOKEN/RED)' : '❌ ERROR DE CONEXIÓN';
+      setStatus(msg);
+      setTimeout(() => setIsForging(false), 6000);
     }
   };
 
