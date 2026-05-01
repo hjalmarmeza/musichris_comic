@@ -62,9 +62,9 @@ jobs:
             let audit = await callCerebras([
               { 
                 role: 'system', 
-                content: 'Eres el Auditor Teológico de @MusiChris. Tu misión es asegurar la FIDELIDAD BÍBLICA ABSOLUTA. REGLAS: 1. Sujeta cada palabra a la Biblia. 2. Identifica alucinaciones (ej: pájaros, fuegos o personajes extraños). 3. Asegura que los personajes sean los correctos. 4. Los prompts deben ser visualmente representativos de la escena bíblica. Si hay fallos, responde EXACTAMENTE: "RECHAZADO: [Error teológico/artístico específico] -> CORRECCIÓN: [Qué debe hacer el creador]". Si está perfecto, responde "APROBADO".' 
+                content: 'Eres el Auditor Teológico de @MusiChris. Tu misión es asegurar la FIDELIDAD BÍBLICA LITERAL. REGLAS: 1. El guion DEBE coincidir con el versículo y foco del "Contexto Sagrado" proporcionado. 2. RECHAZA interpretaciones modernas o simbólicas que no estén en el texto bíblico original (ej: no cambies Nube de Fuego por Nube del Espíritu si no está en el verso). 3. Asegura que los personajes y lugares sean históricamente correctos según la Biblia. 4. Los prompts deben ser visualmente impactantes y fieles al relato. Si hay fallos, responde EXACTAMENTE: "RECHAZADO: [Error teológico específico] -> CORRECCIÓN: [Instrucción técnica para el creador]". Si está perfecto, responde "APROBADO".' 
               },
-              { role: 'user', content: `Contexto Sagrado: ${cleanIdea}\n\nPropuesta de Guion:\n${draft}` }
+              { role: 'user', content: `Contexto Sagrado (Fuente de Verdad): ${cleanIdea}\n\nPropuesta de Guion a Auditar:\n${draft}` }
             ]);
 
             if (audit.includes('RECHAZADO')) {
@@ -73,16 +73,21 @@ jobs:
               draft = await callCerebras([
                 { 
                   role: 'system', 
-                  content: 'Eres el Creador de @MusiChris. Debes corregir tu trabajo siguiendo EXACTAMENTE las instrucciones del Auditor Teológico. No discutas, solo aplica la corrección manteniendo el formato JSON SCHEMA.' 
+                  content: 'Eres el Creador de @MusiChris. Debes corregir el guion siguiendo las instrucciones del Auditor. IMPORTANTE: Tu respuesta debe ser EXCLUSIVAMENTE el objeto JSON corregido, sin explicaciones ni markdown. Mantén el SCHEMA: {"creative_title": "...", "story": [{"prompt": "...", "text": "..."}, ...], "lesson": "...", "reference": "..."}.' 
                 },
-                { role: 'user', content: `Guion con errores: ${draft}\n\nReporte del Auditor: ${audit}\n\nContexto Original: ${cleanIdea}\n\nGenera la versión corregida FINAL.` }
+                { role: 'user', content: `Guion anterior: ${draft}\n\nFeedback del Auditor: ${audit}\n\nContexto Sagrado: ${cleanIdea}\n\nGenera el JSON corregido ahora.` }
               ]);
             } else {
               console.log('✨ Auditoría Superada: El mensaje es fiel y representativo.');
             }
 
             const jsonMatch = draft.match(/\{[\s\S]*\}/);
-            if (!jsonMatch) throw new Error('No se pudo generar un JSON válido tras la supervisión.');
+            if (!jsonMatch) {
+              console.log('--- COMIENZO DE RESPUESTA FALLIDA ---');
+              console.log(draft);
+              console.log('--- FIN DE RESPUESTA FALLIDA ---');
+              throw new Error('No se pudo generar un JSON válido tras la supervisión.');
+            }
             fs.writeFileSync('story_expanded.json', jsonMatch[0]);
           }
 
