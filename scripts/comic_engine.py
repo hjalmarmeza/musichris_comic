@@ -294,7 +294,7 @@ class MusiChrisComicEngine:
         y = 1920 - box_h - 180 
         
         # Dibujar caja narrativa más transparente y elegante
-        draw.rectangle([x, y, x + box_w, y + box_h], fill=(0,0,0,150), outline=(255, 215, 0), width=4)
+        draw.rectangle([x, y, x + box_w, y + box_h], fill=(0,0,0,100), outline=(255, 215, 0), width=4)
         
         curr_y = y + 30
         for line in lines:
