@@ -20,22 +20,40 @@ MODEL_ID = "black-forest-labs/FLUX.1-schnell"
 client = InferenceClient(provider="hf-inference", api_key=HF_TOKEN)
 
 STYLE_PROMPT = (
-    ", in the style of Gustave Dore biblical engravings and James Tissot religious paintings, "
-    "ancient Israel, first century, solemn and reverent atmosphere, classical religious art, "
-    "detailed oil painting texture, dramatic lighting, no modern elements"
+    ", clean digital comic book art style, bold outlines, cel shading, "
+    "vivid colors, first century biblical setting, professional illustration, "
+    "historically accurate clothing, 9:16 vertical composition"
 )
 NEGATIVE_PROMPT = (
-    "modern objects, soap dispensers, jewelry, earrings, piercings, modern accessories, "
-    "sunglasses, romantic intimacy, seductive, low cut clothing, electricity, neon, plastic, "
-    "glass bottles with pumps, computers, phones, extra fingers, distorted faces, blurry, "
-    "modern architecture, tattoos, watches, cars, photorealistic photography"
+    "modern objects, soap dispensers, jewelry on men, earrings on men, modern accessories, "
+    "sunglasses, romantic kiss, seductive pose, revealing clothing, electricity, neon, plastic, "
+    "glass pump bottles, computers, phones, distorted faces, blurry, "
+    "modern architecture, tattoos, watches, cars, oil painting, photorealistic"
 )
 
+def get_font(size):
+    """Obtiene la mejor fuente disponible en cualquier sistema operativo."""
+    candidates = [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",        # Linux/GitHub Actions
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf", # Linux alt
+        "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",          # Linux alt2
+        "/System/Library/Fonts/Helvetica.ttc",                          # macOS
+        "/System/Library/Fonts/Arial.ttf",                              # macOS alt
+    ]
+    for path in candidates:
+        try:
+            return ImageFont.truetype(path, size)
+        except:
+            continue
+    # Último recurso - fuente por defecto aumentada
+    print(f"⚠️ Fuente no encontrada, usando default para tamaño {size}")
+    return ImageFont.load_default(size=size)  # PIL 10.0+ soporta size
+
 def generate_image_hf_direct(prompt, retries=3):
-    """Genera imagen usando FLUX.1-schnell con estilo Gustave Doré bíblico."""
+    """Genera imagen usando FLUX.1-schnell estilo comic digital bíblico."""
     for i in range(retries):
         try:
-            print(f"  🖼️ Generando imagen (FLUX Bíblico - Intento {i+1})...")
+            print(f"  🖼️ Generando imagen (Comic Digital - Intento {i+1})...")
             image = client.text_to_image(
                 prompt,
                 model=MODEL_ID,
@@ -69,39 +87,47 @@ class MusiChrisComicEngine:
         return generate_image_hf_direct(prompt + STYLE_PROMPT, retries)
 
     def generate_title_video(self, title):
-        """Genera la pantalla inicial usando video_pantalla_inicio.mp4."""
+        """Genera la pantalla inicial usando video_pantalla_inicio.mp4 con texto correctamente dimensionado."""
         output_video = self.assets_dir / "intro_rendered.mp4"
         input_video = self.public_dir / "video_pantalla_inicio.mp4"
         
         print(f"🎬 Generando intro premium para: {title}")
-        safe_title = title.replace("'", "'\\''").replace('"', '')
+        # Escapado seguro del título para ffmpeg
+        safe_title = title.replace("'", "\u2019").replace('"', '').replace(':', ' -').replace('\\', '')
+        # Fuente disponible en Ubuntu GitHub Actions
+        font_linux = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+        font_mac = "/System/Library/Fonts/Helvetica.ttc"
+        import platform
+        font_file = font_linux if platform.system() == 'Linux' else font_mac
+        
+        drawtext_title = (
+            f"drawtext=fontfile='{font_file}':text='{safe_title}':fontcolor=gold:fontsize=55:"
+            f"x=(w-text_w)/2:y=(h/2)-150:box=1:boxcolor=black@0.5:boxborderw=20:"
+            f"line_spacing=10"
+        )
+        drawtext_brand = (
+            f"drawtext=fontfile='{font_file}':text='@MusiChris Studio':fontcolor=white:fontsize=40:"
+            f"x=(w-text_w)/2:y=(h/2)+50:box=1:boxcolor=black@0.4:boxborderw=12"
+        )
+        vf = f"{drawtext_title},{drawtext_brand}"
         
         if input_video.exists():
             cmd = [
                 "ffmpeg", "-y", "-i", str(input_video),
-                "-vf", (
-                    f"drawtext=text='{safe_title}':fontcolor=gold:fontsize=80:"
-                    "x=(w-text_w)/2:y=(h/2)-100:box=1:boxcolor=black@0.4:boxborderw=15:line_spacing=15,"
-                    "drawtext=text='@MusiChris Studio':fontcolor=white:fontsize=45:"
-                    "x=(w-text_w)/2:y=(h/2)+80:box=1:boxcolor=black@0.3:boxborderw=10"
-                ),
+                "-vf", vf,
                 "-t", "6", "-c:v", "libx264", "-pix_fmt", "yuv420p", str(output_video)
             ]
         else:
             print("⚠️ Video intro no encontrado, usando fallback de color.")
             cmd = [
                 "ffmpeg", "-y", "-f", "lavfi", "-i", "color=c=#1a0a00:s=1080x1920:r=30:d=6",
-                "-vf", (
-                    f"drawtext=text='{safe_title}':fontcolor=gold:fontsize=80:"
-                    "x=(w-text_w)/2:y=(h/2)-100:box=1:boxcolor=black@0.6:boxborderw=15,"
-                    "drawtext=text='@MusiChris Studio':fontcolor=white:fontsize=45:"
-                    "x=(w-text_w)/2:y=(h/2)+80:box=1:boxcolor=black@0.5:boxborderw=10"
-                ),
+                "-vf", vf,
                 "-c:v", "libx264", "-pix_fmt", "yuv420p", str(output_video)
             ]
             
         subprocess.run(cmd, check=True)
         return str(output_video)
+
 
     def _generate_title_video_unused(self, title):
         """[LEGACY - no usar en cloud] Requiere video_pantalla_inicio.mp4 local."""
@@ -212,8 +238,7 @@ class MusiChrisComicEngine:
         draw = ImageDraw.Draw(overlay)
         
         font_path = "/System/Library/Fonts/Helvetica.ttc"
-        try: font = ImageFont.truetype(font_path, 72) # Aumentado de 48 a 72 para legibilidad
-        except: font = ImageFont.load_default()
+        font = get_font(72)  # Usa la función multiplataforma
 
         # Envolver texto - Ajustado para fuente más grande
         words = text.split(); lines = []; curr = ""
@@ -251,27 +276,27 @@ class MusiChrisComicEngine:
         return output.getvalue()
 
     def auto_split_story(self, description):
-        """Divide en 7 paneles (2 al 8) con estilo Gustave Doré incrustado en cada prompt."""
+        """Divide en 7 paneles (2 al 8) con prompts de comic digital bíblico claro."""
         sentences = re.split(r'(?<=[.!?])\s+', description)
         panels = []
         for i in range(7):
             idx = i % len(sentences)
             text = sentences[idx]
             
-            # Estilo Artístico Bíblico base
-            art_style = "Gustave Dore style biblical engraving, solemn religious scene, ancient Jerusalem"
+            # Base: comic digital, no pintura
+            art_style = "clean digital comic book illustration, bold ink outlines, cel shading, vibrant colors, biblical first century setting"
 
-            # Contexto específico por personaje/objeto detectado
+            # Contexto específico por personaje/objeto
             if "Jesús" in text or "Jesus" in text or "Señor" in text:
-                art_style += ", Jesus as a dignified first-century Jewish man with beard and humble robe, compassionate face"
-            if "mujer" in text or "woman" in text or "pecadora" in text:
-                art_style += ", humble woman in long modest first-century Jewish robes, head covered"
+                art_style += ". Jesus: dignified man, beard, humble brown robe, sandals, kind eyes"
+            if "mujer" in text or "pecadora" in text:
+                art_style += ". Woman: long modest robe, head covered with cloth"
             if "alabastro" in text or "frasco" in text or "perfume" in text:
-                art_style += ", simple ancient stone alabaster jar, no glass, no pump"
+                art_style += ". Jar: small ancient clay pot, ceramic, no glass"
             if "fariseo" in text or "Simón" in text:
-                art_style += ", proud religious leader in ornate Jewish robes, ancient dining room"
+                art_style += ". Pharisee: ornate robe, beard, serious expression"
 
-            prompt = f"{art_style}. Scene: {text}. No modern elements, no jewelry on men, no revealing clothing."
+            prompt = f"{art_style}. Clear scene: {text}"
             panels.append({"prompt": prompt, "text": text, "panel_num": i+2})
         return panels
 
