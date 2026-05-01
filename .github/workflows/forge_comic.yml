@@ -56,15 +56,17 @@ jobs:
               if (res.statusCode === 200) {
                 const response = JSON.parse(data);
                 let content = response.choices[0].message.content;
-                content = content.replace(/```json|```/g, '').trim();
-                // Filtro de pureza: Eliminar caracteres de control y sanitizar saltos de línea
-                content = content.replace(/[\u0000-\u001F\u007F-\u009F]/g, (match) => {
-                  if (match === '\n') return '\\n';
-                  if (match === '\r') return '\\r';
-                  return '';
-                });
-                fs.writeFileSync('story_expanded.json', content);
-                console.log('✅ Historia y enseñanza de impacto generadas con éxito.');
+                // Imán de JSON: Extraer lo que está entre la primera { y la última }
+                const jsonMatch = content.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                  let cleanContent = jsonMatch[0];
+                  // Limpiar solo caracteres de control peligrosos
+                  cleanContent = cleanContent.replace(/[\u0000-\u0009\u000B-\u001F\u007F-\u009F]/g, "");
+                  fs.writeFileSync('story_expanded.json', cleanContent);
+                  console.log('✅ Historia y enseñanza de impacto extraídas con éxito.');
+                } else {
+                  throw new Error('No se encontró un JSON válido en la respuesta de la IA.');
+                }
               } else {
                 console.error('❌ Error Cerebras:', data);
                 process.exit(1);
