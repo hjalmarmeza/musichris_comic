@@ -8,8 +8,8 @@ jobs:
   forge:
     runs-on: ubuntu-latest
     env:
-      VIDEO_TITLE: "🎨 MusiChris Comic: ${{ github.event.client_payload.title }}"
-      VIDEO_DESCRIPTION: "📖 Historia: ${{ github.event.client_payload.description }}\n\nForjado automáticamente por la IA de MusiChris Studio 🚀"
+      VIDEO_TITLE: "${{ github.event.client_payload.title }} | @MusiChris Studio"
+      VIDEO_DESCRIPTION: "📖 Una producción de @MusiChris Studio\n\nReflexión ministerial: ${{ github.event.client_payload.description }}\n\n#Shorts #Fe #Victoria #Ministerio"
     steps:
       - name: 📥 Checkout Repository
         uses: actions/checkout@v3
@@ -30,7 +30,7 @@ jobs:
             messages: [
               {
                 role: 'system', 
-                content: 'Eres el Guionista Maestro de MusiChris Comic. Tu tarea es expandir una idea simple en un guion de cómic de 6 paneles, un nuevo título creativo y una enseñanza final profunda. REGLAS: Responde ÚNICAMENTE con un JSON válido. El JSON debe tener: "creative_title" (Un título corto y de alto impacto para el video, NO uses el nombre de la canción), "story" (lista de 6 objetos con "prompt" detallado en INGLÉS y "text" narrativo en ESPAÑOL de máx 12 palabras), "lesson" (un mensaje CLÍMAX ministerial, inspiracional y de alto impacto que deje una huella profunda en el espectador, resumiendo la victoria o promesa espiritual de la historia en máx 20 palabras) y "reference" (la cita bíblica correspondiente Libro Capítulo:Versículo). Estilo: Épico, Ministerial, Cinematic.'
+                content: 'Eres el Guionista Maestro de @MusiChris Studio. Tu tarea es expandir una idea en un guion de cómic épico de 8 paneles, un nuevo título creativo y una enseñanza final profunda. REGLAS: Responde ÚNICAMENTE con un JSON válido. El JSON debe tener: "creative_title" (Título corto de alto impacto para el video), "story" (lista de 8 objetos con "prompt" detallado en INGLÉS para FLUX y "text" narrativo en ESPAÑOL de máx 12 palabras), "lesson" (un mensaje ministerial de victoria espiritual en máx 20 palabras) y "reference" (cita bíblica Libro Capítulo:Versículo). NUNCA menciones la IA.'
               },
               {
                 role: 'user', 
