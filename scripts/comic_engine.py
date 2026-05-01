@@ -335,22 +335,34 @@ class MusiChrisComicEngine:
         intro_path = self.generate_title_video(title)
         teaching_vid = self.generate_lesson_video(story_data.get('teaching', ''))
         
-        # Outro generado programáticamente (no depende de archivo local)
+        # Outro: Priorizar logo animado local, si no, generar uno programático
+        outro_source = self.base_dir / "assets/video/outro.mp4"
         outro_final = self.temp_dir / "outro_branded.mp4"
-        print("🎬 Generando outro ministerial programático...")
-        subprocess.run([
-            "ffmpeg", "-y",
-            "-f", "lavfi", "-i", "color=c=black:s=1080x1920:r=30:d=5",
-            "-vf", (
-                "drawtext=text='@MusiChris Studio':fontcolor=gold:fontsize=70:"
-                "x=(w-text_w)/2:y=(h/2)-60:box=1:boxcolor=black@0.5:boxborderw=10,"
-                "drawtext=text='Ministerio Musical':fontcolor=white:fontsize=45:"
-                "x=(w-text_w)/2:y=(h/2)+40:box=1:boxcolor=black@0.5:boxborderw=8"
-            ),
-            "-c:v", "libx264", "-pix_fmt", "yuv420p",
-            str(outro_final)
-        ], check=True)
-        print(f"✅ Outro generado en: {outro_final}")
+        
+        if outro_source.exists():
+            print(f"🎬 Usando LOGO ANIMADO detectado: {outro_source.name}")
+            # Normalizar el logo animado para asegurar compatibilidad de concat
+            subprocess.run([
+                "ffmpeg", "-y", "-i", str(outro_source),
+                "-vf", "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30",
+                "-c:v", "libx264", "-pix_fmt", "yuv420p", "-an", str(outro_final)
+            ], check=True)
+        else:
+            print("🎬 Generando outro ministerial programático (Logo no encontrado)...")
+            subprocess.run([
+                "ffmpeg", "-y",
+                "-f", "lavfi", "-i", "color=c=black:s=1080x1920:r=30:d=5",
+                "-vf", (
+                    "drawtext=text='@MusiChris Studio':fontcolor=gold:fontsize=70:"
+                    "x=(w-text_w)/2:y=(h/2)-60:box=1:boxcolor=black@0.5:boxborderw=10,"
+                    "drawtext=text='Ministerio Musical':fontcolor=white:fontsize=45:"
+                    "x=(w-text_w)/2:y=(h/2)+40:box=1:boxcolor=black@0.5:boxborderw=8"
+                ),
+                "-c:v", "libx264", "-pix_fmt", "yuv420p",
+                str(outro_final)
+            ], check=True)
+        
+        print(f"✅ Outro listo en: {outro_final}")
         
         vids = [intro_path] + panel_paths + [str(teaching_vid), str(outro_final)]
         
