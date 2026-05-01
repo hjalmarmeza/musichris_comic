@@ -16,28 +16,25 @@ from PIL import Image, ImageDraw, ImageFont, ImageStat
 # Configuración Maestra
 load_dotenv()
 HF_TOKEN = os.getenv("HF_TOKEN")
-MODEL_ID = "runwayml/stable-diffusion-v1-5"
-HF_API_URL = f"https://api-inference.huggingface.co/models/{MODEL_ID}"
+MODEL_ID = "black-forest-labs/FLUX.1-schnell"
+client = InferenceClient(provider="hf-inference", api_key=HF_TOKEN)
 
 STYLE_PROMPT = ", professional digital comic art, cinematic lighting, sharp detail, 4k, vertical composition"
 
 def generate_image_hf_direct(prompt, retries=3):
-    """Genera imagen via HTTP directo a HuggingFace (sin InferenceClient)."""
-    headers = {"Authorization": f"Bearer {HF_TOKEN}"}
-    payload = {"inputs": prompt, "options": {"wait_for_model": True}}
-    
+    """Genera imagen via InferenceClient con provider hf-inference."""
     for i in range(retries):
         try:
             print(f"  🖼️ Generando imagen (intento {i+1})...")
-            response = requests.post(HF_API_URL, headers=headers, json=payload, timeout=120)
-            if response.status_code == 200:
-                return response.content
-            else:
-                print(f"  ⚠️ HF Error {response.status_code}: {response.text[:200]}")
-                time.sleep(15)
+            image = client.text_to_image(prompt, model=MODEL_ID)
+            img_byte_arr = io.BytesIO()
+            image.save(img_byte_arr, format='PNG')
+            img_bytes = img_byte_arr.getvalue()
+            print(f"  ✅ Imagen generada ({len(img_bytes)//1024}KB)")
+            return img_bytes
         except Exception as e:
             print(f"  ⚠️ Intento {i+1} falló: {e}")
-            time.sleep(10)
+            time.sleep(15)
     return None
 
 class MusiChrisComicEngine:
