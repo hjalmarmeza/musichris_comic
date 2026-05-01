@@ -23,16 +23,16 @@ STYLE_PROMPT = ", professional digital comic art, cinematic lighting, sharp deta
 
 class MusiChrisComicEngine:
     def __init__(self):
-        self.base_dir = Path(os.getcwd()).absolute()
+        self.base_dir = Path("/home/runner/work/musichris_comic/musichris_comic").absolute()
         self.assets_dir = self.base_dir / "assets/panels"
         self.renders_dir = self.base_dir / "renders"
         self.temp_dir = self.base_dir / "temp"
         self.public_dir = self.base_dir / "public"
         
-        print(f"📂 Directorio Base: {self.base_dir}")
+        print(f"🚀 [INIT] Directorio Base Forzado: {self.base_dir}")
         for d in [self.assets_dir, self.renders_dir, self.temp_dir]:
             d.mkdir(parents=True, exist_ok=True)
-            print(f"✅ Carpeta lista: {d}")
+            print(f"✅ [INIT] Carpeta verificada/creada: {d}")
 
     def generate_image_hf(self, prompt, retries=3):
         """Genera imagen con IA y retorna bytes."""

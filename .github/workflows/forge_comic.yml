@@ -135,8 +135,8 @@ jobs:
           YOUTUBE_CREDENTIALS: ${{ secrets.YOUTUBE_CREDENTIALS }}
           YOUTUBE_TOKEN: ${{ secrets.YOUTUBE_TOKEN }}
         run: |
-          echo "📂 Listado de archivos en el servidor:"
-          ls -R
+          echo "📂 ESCANEO TOTAL DE ARCHIVOS (ls -laR):"
+          ls -laR
           
           VIDEO_FILE=$(find . -name "final_comic.mp4" | head -n 1)
           THUMB_FILE=$(find . -name "thumbnail.jpg" | head -n 1)
