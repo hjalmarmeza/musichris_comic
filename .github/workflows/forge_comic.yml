@@ -127,8 +127,8 @@ jobs:
           YOUTUBE_CREDENTIALS: ${{ secrets.YOUTUBE_CREDENTIALS }}
           YOUTUBE_TOKEN: ${{ secrets.YOUTUBE_TOKEN }}
         run: |
-          VIDEO_FILE=$(ls renders/*.mp4 | head -n 1)
+          VIDEO_FILE="renders/final_comic.mp4"
           THUMB_FILE="thumbnail.jpg"
-          echo "📤 Detectado video: $VIDEO_FILE"
-          echo "🖼️ Detectada miniatura: $THUMB_FILE"
+          echo "📤 Subiendo video: $VIDEO_FILE"
+          echo "🖼️ Con miniatura: $THUMB_FILE"
           node scripts/upload_engine.cjs "$VIDEO_FILE" "$THUMB_FILE"

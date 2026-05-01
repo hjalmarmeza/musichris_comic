@@ -378,7 +378,7 @@ if __name__ == "__main__":
     panel_paths = engine.forge_panels(description)
     
     # 2. Renderizar video final
-    output_filename = f"{title.replace(' ', '_')}_local.mp4"
+    output_filename = "final_comic.mp4"
     story_data = {
         'teaching': description.split('.')[-1] or description # Usar la última frase como enseñanza
     }
