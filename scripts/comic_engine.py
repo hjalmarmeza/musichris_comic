@@ -112,6 +112,13 @@ class MusiChrisComicEngine:
             ]
             
         subprocess.run(cmd, check=True)
+        
+        # Guardar miniatura (Primer frame de la intro)
+        thumb_path = self.base_dir / "thumbnail.jpg"
+        subprocess.run([
+            "ffmpeg", "-y", "-i", str(output_video), "-vframes", "1", str(thumb_path)
+        ], check=True)
+        
         return str(output_video)
 
     def analyze_best_corner(self, img, box_w, box_h):
