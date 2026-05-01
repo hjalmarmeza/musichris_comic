@@ -16,7 +16,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageStat
 # Configuración Maestra
 load_dotenv()
 HF_TOKEN = os.getenv("HF_TOKEN")
-MODEL_ID = "stabilityai/stable-diffusion-xl-base-1.0"
+MODEL_ID = "runwayml/stable-diffusion-v1-5"
 HF_API_URL = f"https://api-inference.huggingface.co/models/{MODEL_ID}"
 
 STYLE_PROMPT = ", professional digital comic art, cinematic lighting, sharp detail, 4k, vertical composition"
