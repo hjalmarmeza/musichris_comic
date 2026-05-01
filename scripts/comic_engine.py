@@ -222,17 +222,17 @@ class MusiChrisComicEngine:
         else: return 1080 - margin - box_w, margin
 
     def add_text_to_image(self, img_data, text):
-        """Hornea el texto ministerial sobre el panel asegurando legibilidad vertical 9:16."""
+        """Hornea el texto completo con caja dinámica y escalado de fuente si es necesario."""
         img = Image.open(io.BytesIO(img_data)).convert('RGBA')
         
-        # Forzar redimensionado a 1080x1920 con crop antes de añadir texto
+        # Redimensionado 9:16
         w, h = img.size
         aspect = 1080/1920
-        if w/h > aspect: # Imagen ancha
+        if w/h > aspect:
             new_w = int(h * aspect)
             left = (w - new_w) / 2
             img = img.crop((left, 0, left + new_w, h))
-        else: # Imagen alta
+        else:
             new_h = int(w / aspect)
             top = (h - new_h) / 2
             img = img.crop((0, top, w, top + new_h))
@@ -241,36 +241,45 @@ class MusiChrisComicEngine:
         overlay = Image.new('RGBA', img.size, (0,0,0,0))
         draw = ImageDraw.Draw(overlay)
         
-        font = get_font(72)  # Fuente DejaVu instalada vía apt-get
-
-        # Envolver texto - Ajustado para fuente más grande
+        # Escalado dinámico de fuente: Empezar en 72, bajar hasta 50 si hay mucho texto
+        current_font_size = 72
+        if len(text) > 150: current_font_size = 60
+        if len(text) > 250: current_font_size = 50
+        
+        font = get_font(current_font_size)
+        
+        # Envoltura de texto inteligente
+        max_chars_per_line = 25 if current_font_size < 60 else 20
         words = text.split(); lines = []; curr = ""
         for w in words:
-            if len(curr + w) < 22: curr += w + " " # Menos caracteres por línea por fuente más grande
+            if len(curr + w) < max_chars_per_line: curr += w + " "
             else: lines.append(curr.strip()); curr = w + " "
         lines.append(curr.strip())
-        
-        line_h = 90; box_w = 0 # Aumentado line_h
+        lines = [l for l in lines if l]
+
+        line_h = current_font_size + 20
+        box_w = 0
         for l in lines:
             bbox = draw.textbbox((0, 0), l, font=font)
             box_w = max(box_w, bbox[2] - bbox[0])
-        box_w += 80; box_h = len(lines) * line_h + 60
         
-        # Colocar el cuadro de texto en la parte INFERIOR-CENTRAL
+        box_w = min(box_w + 80, 1000)
+        box_h = len(lines) * line_h + 60
+        
+        # Posición: Siempre en la parte inferior, subiendo si la caja es alta
         x = (1080 - box_w) / 2
-        y = 1920 - box_h - 250 # Subido un poco más para que no se pierda en la UI de YouTube
+        y = 1920 - box_h - 220 
         
-        # Fondo tipo "Narrative Bar" más elegante
-        draw.rectangle([x, y, x + box_w, y + box_h], fill=(0,0,0,180), outline=(255, 215, 0), width=5)
+        # Dibujar caja narrativa dorada
+        draw.rectangle([x, y, x + box_w, y + box_h], fill=(0,0,0,190), outline=(255, 215, 0), width=5)
         
         curr_y = y + 30
         for line in lines:
             bbox = draw.textbbox((0, 0), line, font=font)
-            line_w = bbox[2] - bbox[0]
-            line_x = x + (box_w - line_w) / 2
-            # Sombra de texto para máxima legibilidad
-            draw.text((line_x + 3, curr_y + 3), line, font=font, fill=(0,0,0,255))
-            draw.text((line_x, curr_y), line, font=font, fill=(255, 215, 0)) # Oro Divine
+            lw = bbox[2] - bbox[0]
+            lx = x + (box_w - lw) / 2
+            draw.text((lx + 3, curr_y + 3), line, font=font, fill=(0,0,0,255))
+            draw.text((lx, curr_y), line, font=font, fill=(255, 215, 0))
             curr_y += line_h
             
         final_img = Image.alpha_composite(img, overlay)
@@ -279,33 +288,40 @@ class MusiChrisComicEngine:
         return output.getvalue()
 
     def auto_split_story(self, description):
-        """Divide en 7 paneles (2 al 8) con prompts de comic digital bíblico claro."""
+        """Divide toda la historia en 7 bloques continuos (paneles 2 al 8)."""
         sentences = re.split(r'(?<=[.!?])\s+', description)
+        sentences = [s.strip() for s in sentences if s.strip()]
+        
+        num_panels = 7
+        avg = len(sentences) / num_panels
+        
         panels = []
-        for i in range(7):
-            idx = i % len(sentences)
-            text = sentences[idx]
+        last = 0.0
+        for i in range(num_panels):
+            # Agrupar oraciones para asegurar continuidad total
+            curr = int(last + avg) if i < num_panels - 1 else len(sentences)
+            chunk = sentences[int(last):curr]
+            panel_text = ' '.join(chunk)
+            last = curr
             
-            # Base: comic digital, no pintura
-            art_style = "clean digital comic book illustration, bold ink outlines, cel shading, vibrant colors, biblical first century setting"
+            # Si el bloque es muy largo para un solo panel, resumir a las primeras 2 oraciones del bloque
+            # Pero solo si el bloque tiene más de 3 oraciones.
+            if len(chunk) > 3:
+                panel_text = ' '.join(chunk[:2]) + " " + chunk[-1]
 
-            # Contexto específico por personaje/objeto
-            if "Jesús" in text or "Jesus" in text or "Señor" in text:
-                art_style += ". Jesus: dignified man, beard, humble brown robe, sandals, kind eyes"
-            if "mujer" in text or "pecadora" in text:
-                art_style += ". Woman: long modest robe, head covered with cloth"
-            if "alabastro" in text or "frasco" in text or "perfume" in text:
-                art_style += ". Jar: small ancient clay pot, ceramic, no glass"
-            if "fariseo" in text or "Simón" in text:
-                art_style += ". Pharisee: ornate robe, beard, serious expression"
+            art_style = "clean digital comic book illustration, bold ink outlines, cel shading, vivid colors, biblical first century"
+            if any(k in panel_text for k in ["Jesús", "Jesus", "Señor"]):
+                art_style += ". Jesus: dignified man, beard, humble brown robe, sandals"
+            if any(k in panel_text for k in ["mujer", "pecadora"]):
+                art_style += ". Woman: long modest robe, head covered"
+            if any(k in panel_text for k in ["alabastro", "frasco", "perfume"]):
+                art_style += ". Jar: small ancient clay pot, ceramic"
+            if any(k in panel_text for k in ["fariseo", "Simón"]):
+                art_style += ". Pharisee: ornate robe, beard, serious"
 
-            # Limitar text del panel a máx 12 palabras para evitar truncamientos
-            panel_text = ' '.join(text.split()[:12])
-            if len(text.split()) > 12:
-                panel_text += '...'
-            
-            prompt = f"{art_style}. Clear scene: {text}"
+            prompt = f"{art_style}. Scene: {panel_text}"
             panels.append({"prompt": prompt, "text": panel_text, "panel_num": i+2})
+            
         return panels
 
     def forge_panels(self, story_panels):
