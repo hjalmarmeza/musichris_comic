@@ -17,13 +17,13 @@ from PIL import Image, ImageDraw, ImageFont, ImageStat
 load_dotenv()
 HF_TOKEN = os.getenv("HF_TOKEN")
 MODEL_ID = "black-forest-labs/FLUX.1-schnell" 
-client = InferenceClient(api_key=HF_TOKEN)
+client = InferenceClient(api_key=HF_TOKEN, timeout=90)
 
 STYLE_PROMPT = ", professional digital comic art, cinematic lighting, sharp detail, 4k, vertical composition"
 
 class MusiChrisComicEngine:
     def __init__(self):
-        self.base_dir = Path("/home/runner/work/musichris_comic/musichris_comic").absolute()
+        self.base_dir = Path(os.getcwd()).absolute()
         self.assets_dir = self.base_dir / "assets/panels"
         self.renders_dir = self.base_dir / "renders"
         self.temp_dir = self.base_dir / "temp"
@@ -48,7 +48,28 @@ class MusiChrisComicEngine:
         return None
 
     def generate_title_video(self, title):
-        """Genera la pantalla inicial con el título 'horneado' sobre el video de fondo."""
+        """Genera la pantalla inicial programáticamente (sin depender de archivos locales)."""
+        output_video = self.assets_dir / "intro_rendered.mp4"
+        print(f"🎬 Generando intro para: {title}")
+        # Generar intro 100% programático con ffmpeg
+        safe_title = title.replace("'", "'\\''").replace('"', '')
+        subprocess.run([
+            "ffmpeg", "-y",
+            "-f", "lavfi", "-i", "color=c=#1a0a00:s=1080x1920:r=30:d=7",
+            "-vf", (
+                f"drawtext=text='{safe_title}':fontcolor=gold:fontsize=65:"
+                "x=(w-text_w)/2:y=(h/2)-80:box=1:boxcolor=black@0.6:boxborderw=15:line_spacing=10,"
+                "drawtext=text='@MusiChris Studio':fontcolor=white:fontsize=42:"
+                "x=(w-text_w)/2:y=(h/2)+60:box=1:boxcolor=black@0.5:boxborderw=8"
+            ),
+            "-c:v", "libx264", "-pix_fmt", "yuv420p",
+            str(output_video)
+        ], check=True)
+        print(f"✅ Intro generado: {output_video}")
+        return str(output_video)
+
+    def _generate_title_video_unused(self, title):
+        """[LEGACY - no usar en cloud] Requiere video_pantalla_inicio.mp4 local."""
         output_video = self.assets_dir / "intro_rendered.mp4"
         input_video = self.public_dir / "video_pantalla_inicio.mp4"
         

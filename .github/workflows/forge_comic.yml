@@ -7,6 +7,7 @@ on:
 jobs:
   forge:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     env:
       VIDEO_TITLE: "${{ github.event.client_payload.title }} | @MusiChris Studio"
       VIDEO_DESCRIPTION: "📖 Una producción de @MusiChris Studio\n\nReflexión ministerial: ${{ github.event.client_payload.description }}\n\n#Shorts #Fe #Victoria #Ministerio"
