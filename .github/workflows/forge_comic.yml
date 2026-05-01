@@ -23,19 +23,25 @@ jobs:
           const https = require('https');
           const fs = require('fs');
 
-          const title = `${{ github.event.client_payload.title }}`;
-          const idea = `${{ github.event.client_payload.description }}`;
+          const rawTitle = `${{ github.event.client_payload.title }}`;
+          const rawIdea = `${{ github.event.client_payload.description }}`;
+
+          // Limpiador de Metadatos: Eliminar BPM, tempo, pads y especificaciones técnicas que confunden a la IA
+          const cleanIdea = rawIdea.replace(/BPM|tempo|Pads|Guitarra|eco|vibra|gritos|estilo|bpm/gi, "")
+                                   .replace(/\d+/g, " ")
+                                   .replace(/\s+/g, " ")
+                                   .trim();
 
           const payload = {
             model: 'llama3.1-8b',
             messages: [
               {
                 role: 'system', 
-                content: 'Eres el Guionista Maestro de @MusiChris Studio. Tu tarea es expandir una idea en un guion de cómic épico de 8 paneles, un nuevo título creativo y una enseñanza final profunda. REGLAS: Responde ÚNICAMENTE con un JSON válido. El JSON debe tener: "creative_title" (Título corto de alto impacto para el video), "story" (lista de 8 objetos con "prompt" detallado en INGLÉS para FLUX y "text" narrativo en ESPAÑOL de máx 12 palabras), "lesson" (un mensaje ministerial de victoria espiritual en máx 20 palabras) y "reference" (cita bíblica Libro Capítulo:Versículo). NUNCA menciones la IA.'
+                content: 'Eres el Guionista Maestro de @MusiChris Studio. Tu tarea es expandir una idea en un guion de cómic épico de 8 paneles, un nuevo título creativo y una enseñanza final profunda. REGLAS SAGRADAS: 1. Mantén FIDELIDAD ABSOLUTA al Versículo y Contexto proporcionados. 2. NO alucines elementos (si no se menciona un pájaro, no pongas un pájaro). 3. Cada panel debe tener un "text" narrativo en ESPAÑOL de MÁXIMO 12 PALABRAS. 4. Los prompts para FLUX deben ser en INGLÉS, detallados y cinemáticos. 5. Responde ÚNICAMENTE con un JSON válido. NUNCA menciones la IA.'
               },
               {
                 role: 'user', 
-                content: `Título Base/Canción: ${title}. ADN Bíblico: ${idea}. Genera el título creativo, la historia y la enseñanza de impacto.`
+                content: `Título Base/Canción: ${rawTitle}. ADN Bíblico: ${cleanIdea}. Genera el título creativo, la historia y la enseñanza de impacto.`
               }
             ]
           };

@@ -29,9 +29,9 @@ MODEL_ID = "black-forest-labs/FLUX.1-schnell"
 client = InferenceClient(provider="hf-inference", api_key=HF_TOKEN)
 
 STYLE_PROMPT = (
-    ", clean digital comic book art style, bold outlines, cel shading, "
-    "vivid colors, first century biblical setting, professional illustration, "
-    "historically accurate clothing, 9:16 vertical composition"
+    ", cinematic film style, epic realism, volumetric lighting, 8k resolution, "
+    "highly detailed, first century biblical setting, professional movie concept art, "
+    "historically accurate simple linen clothing, 9:16 vertical composition"
 )
 NEGATIVE_PROMPT = (
     "crown, king crown, diadem, tiara, royal headpiece, "
@@ -39,7 +39,9 @@ NEGATIVE_PROMPT = (
     "sunglasses, romantic kiss, seductive pose, revealing clothing, electricity, neon, plastic, "
     "glass bottle, glass flask, glass jar, decanter, glass pump bottles, "
     "computers, phones, distorted faces, blurry, "
-    "modern architecture, tattoos, watches, cars, oil painting, photorealistic"
+    "modern architecture, tattoos, watches, cars, oil painting, "
+    "classical art, renaissance painting, da vinci style, brush strokes, canvas texture, "
+    "sketch, drawing, flat colors, low resolution"
 )
 
 # Fuente instalada vía apt-get en el workflow (fonts-dejavu-core)
@@ -99,21 +101,21 @@ class MusiChrisComicEngine:
         print(f"🎬 Generando intro blindada para: {title}")
         clean_title = safe_ffmpeg_text(title)
         
-        if len(clean_title) > 22:
+        if len(clean_title) > 18:
             words = clean_title.split()
             mid = len(words) // 2
             line1 = ' '.join(words[:mid])
             line2 = ' '.join(words[mid:])
             drawtext_title = (
-                f"drawtext=fontfile='{FONT_PATH}':text='{line1}':fontcolor=gold:fontsize=55:"
-                f"x=(w-text_w)/2:y=(h/2)-220:box=1:boxcolor=black@0.5:boxborderw=15,"
-                f"drawtext=fontfile='{FONT_PATH}':text='{line2}':fontcolor=gold:fontsize=55:"
-                f"x=(w-text_w)/2:y=(h/2)-140:box=1:boxcolor=black@0.5:boxborderw=15"
+                f"drawtext=fontfile='{FONT_PATH}':text='{line1}':fontcolor=gold:fontsize=85:"
+                f"x=(w-text_w)/2:y=(h/2)-250:box=1:boxcolor=black@0.6:boxborderw=20,"
+                f"drawtext=fontfile='{FONT_PATH}':text='{line2}':fontcolor=gold:fontsize=85:"
+                f"x=(w-text_w)/2:y=(h/2)-130:box=1:boxcolor=black@0.6:boxborderw=20"
             )
         else:
             drawtext_title = (
-                f"drawtext=fontfile='{FONT_PATH}':text='{clean_title}':fontcolor=gold:fontsize=55:"
-                f"x=(w-text_w)/2:y=(h/2)-150:box=1:boxcolor=black@0.5:boxborderw=15"
+                f"drawtext=fontfile='{FONT_PATH}':text='{clean_title}':fontcolor=gold:fontsize=95:"
+                f"x=(w-text_w)/2:y=(h/2)-150:box=1:boxcolor=black@0.6:boxborderw=25"
             )
         
         drawtext_brand = (
@@ -246,20 +248,22 @@ class MusiChrisComicEngine:
         overlay = Image.new('RGBA', img.size, (0,0,0,0))
         draw = ImageDraw.Draw(overlay)
         
-        # Escalado dinámico de fuente: Empezar en 72, bajar hasta 50 si hay mucho texto
+        # Escalado dinámico de fuente: Mínimo 60px para legibilidad
         current_font_size = 72
-        if len(text) > 150: current_font_size = 60
-        if len(text) > 250: current_font_size = 50
+        if len(text) > 120: current_font_size = 65
+        if len(text) > 180: current_font_size = 60
         
         font = get_font(current_font_size)
         
         # Envoltura de texto inteligente
-        max_chars_per_line = 25 if current_font_size < 60 else 20
+        max_chars_per_line = 22 if current_font_size < 70 else 18
         words = text.split(); lines = []; curr = ""
         for w in words:
             if len(curr + w) < max_chars_per_line: curr += w + " "
-            else: lines.append(curr.strip()); curr = w + " "
-        lines.append(curr.strip())
+            else: 
+                if curr: lines.append(curr.strip())
+                curr = w + " "
+        if curr: lines.append(curr.strip())
         lines = [l for l in lines if l]
 
         line_h = current_font_size + 20
