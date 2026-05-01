@@ -122,13 +122,22 @@ jobs:
       - name: 📦 Install Node Dependencies
         run: npm install googleapis
 
-      - name: ☁️ Upload to YouTube
+      - name: 🔍 Diagnostic & Upload
         env:
           YOUTUBE_CREDENTIALS: ${{ secrets.YOUTUBE_CREDENTIALS }}
           YOUTUBE_TOKEN: ${{ secrets.YOUTUBE_TOKEN }}
         run: |
-          VIDEO_FILE="renders/final_comic.mp4"
-          THUMB_FILE="thumbnail.jpg"
-          echo "📤 Subiendo video: $VIDEO_FILE"
-          echo "🖼️ Con miniatura: $THUMB_FILE"
+          echo "📂 Listado de archivos en el servidor:"
+          ls -R
+          
+          VIDEO_FILE=$(find . -name "final_comic.mp4" | head -n 1)
+          THUMB_FILE=$(find . -name "thumbnail.jpg" | head -n 1)
+          
+          if [ -z "$VIDEO_FILE" ]; then
+            echo "❌ ERROR CRÍTICO: No se encontró el video final_comic.mp4 en ningún lugar."
+            exit 1
+          fi
+          
+          echo "📤 Subiendo video encontrado en: $VIDEO_FILE"
+          echo "🖼️ Con miniatura encontrada en: $THUMB_FILE"
           node scripts/upload_engine.cjs "$VIDEO_FILE" "$THUMB_FILE"
