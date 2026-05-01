@@ -12,6 +12,15 @@ from huggingface_hub import InferenceClient
 from io import BytesIO
 import io
 from PIL import Image, ImageDraw, ImageFont, ImageStat
+import platform
+
+def safe_ffmpeg_text(text):
+    """Escapa caracteres especiales para filtros drawtext de FFmpeg en Linux."""
+    if not text: return ""
+    # Reemplazos críticos para evitar que FFmpeg rompa el filtro
+    t = text.replace(":", "\\:").replace("'", "\u2019").replace(",", "\\,")
+    t = t.replace('"', '').replace('=', '\\=')
+    return t
 
 # Configuración Maestra
 load_dotenv()
@@ -83,16 +92,15 @@ class MusiChrisComicEngine:
         return generate_image_hf_direct(prompt + STYLE_PROMPT, retries)
 
     def generate_title_video(self, title):
-        """Genera la pantalla inicial. Títulos >20 caracteres se muestran en 2 líneas."""
+        """Genera la pantalla inicial estandarizada para Linux (30fps, yuv420p)."""
         output_video = self.assets_dir / "intro_rendered.mp4"
         input_video = self.public_dir / "video_pantalla_inicio.mp4"
         
-        print(f"🎬 Generando intro para: {title}")
-        safe_title = title.replace("'", "\u2019").replace('"', '').replace(':', ' -').replace('\\', '')
+        print(f"🎬 Generando intro blindada para: {title}")
+        clean_title = safe_ffmpeg_text(title)
         
-        # Word wrap: si el título tiene más de 20 caracteres, dividir en 2 filas
-        if len(safe_title) > 20:
-            words = safe_title.split()
+        if len(clean_title) > 22:
+            words = clean_title.split()
             mid = len(words) // 2
             line1 = ' '.join(words[:mid])
             line2 = ' '.join(words[mid:])
@@ -104,7 +112,7 @@ class MusiChrisComicEngine:
             )
         else:
             drawtext_title = (
-                f"drawtext=fontfile='{FONT_PATH}':text='{safe_title}':fontcolor=gold:fontsize=55:"
+                f"drawtext=fontfile='{FONT_PATH}':text='{clean_title}':fontcolor=gold:fontsize=55:"
                 f"x=(w-text_w)/2:y=(h/2)-150:box=1:boxcolor=black@0.5:boxborderw=15"
             )
         
@@ -112,24 +120,21 @@ class MusiChrisComicEngine:
             f"drawtext=fontfile='{FONT_PATH}':text='@MusiChris Studio':fontcolor=white:fontsize=40:"
             f"x=(w-text_w)/2:y=(h/2)+60:box=1:boxcolor=black@0.4:boxborderw=12"
         )
-        vf = f"{drawtext_title},{drawtext_brand}"
+        
+        vf = f"scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30,format=yuv420p,{drawtext_title},{drawtext_brand}"
         
         if input_video.exists():
             cmd = [
                 "ffmpeg", "-y", "-i", str(input_video),
-                "-vf", vf,
-                "-t", "6", "-c:v", "libx264", "-pix_fmt", "yuv420p", str(output_video)
+                "-vf", vf, "-t", "6", "-c:v", "libx264", "-preset", "fast", str(output_video)
             ]
         else:
-            print("⚠️ Video intro no encontrado, usando fallback.")
             cmd = [
                 "ffmpeg", "-y", "-f", "lavfi", "-i", "color=c=#1a0a00:s=1080x1920:r=30:d=6",
-                "-vf", vf,
-                "-c:v", "libx264", "-pix_fmt", "yuv420p", str(output_video)
+                "-vf", vf, "-c:v", "libx264", "-preset", "fast", str(output_video)
             ]
             
         subprocess.run(cmd, check=True)
-        print(f"✅ Intro generado: {output_video}")
         return str(output_video)
 
 
@@ -342,89 +347,87 @@ class MusiChrisComicEngine:
             
             vid_path = self.assets_dir / f"panel_{i}.mp4"
             
-            # Zoompan corregido para verticalidad 9:16
+            # Zoompan forzado a 30fps para evitar errores de concatenación en Linux
             zoom_filter = (
-                "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,"
-                "zoompan=z='min(zoom+0.0015,1.5)':d=165:s=1080x1920:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'"
+                "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30,"
+                "zoompan=z='min(zoom+0.001,1.3)':d=165:s=1080x1920:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'"
             )
             
             subprocess.run([
                 "ffmpeg", "-y", "-loop", "1", "-i", str(panel_img),
-                "-vf", f"{zoom_filter},fade=t=in:st=0:d=0.5",
-                "-t", "5.5", "-c:v", "libx264", "-pix_fmt", "yuv420p", str(vid_path)
+                "-vf", f"{zoom_filter},fade=t=in:st=0:d=0.5,format=yuv420p",
+                "-t", "5.5", "-c:v", "libx264", "-preset", "fast", str(vid_path)
             ], check=True)
             panel_vids.append(str(vid_path))
         return panel_vids
 
     def generate_lesson_video(self, teaching):
-        """Genera la pantalla de enseñanza usando master_teaching_bg.mp4 con narrative bar legible."""
+        """Genera la pantalla de enseñanza blindada para Linux."""
         output_video = self.temp_dir / "lesson_screen.mp4"
         input_video = self.public_dir / "master_teaching_bg.mp4"
         
-        # Overlay con caja narrativa igual que los paneles
+        clean_teaching = safe_ffmpeg_text(teaching)
+        
+        # Overlay con caja narrativa
         overlay = Image.new('RGBA', (1080, 1920), (0,0,0,0))
         draw = ImageDraw.Draw(overlay)
-        f_main = get_font(70)  # Fuente DejaVu confirmada
+        f_main = get_font(70)
 
-        # Partir el texto en líneas de máx 18 palabras
-        words = teaching.split()
+        words = clean_teaching.split()
         lines = []
         curr = ""
         for w in words:
             if len(curr + w) < 22: curr += w + " "
             else: lines.append(curr.strip()); curr = w + " "
         lines.append(curr.strip())
-        lines = [l for l in lines if l]  # Limpiar líneas vacías
+        lines = [l for l in lines if l]
         
         line_h = 90
         box_w = 0
         for l in lines:
             bbox = draw.textbbox((0, 0), l, font=f_main)
             box_w = max(box_w, bbox[2] - bbox[0])
-        box_w = min(box_w + 80, 1000)  # Máx 1000px de ancho
+        box_w = min(box_w + 80, 1000)
         box_h = len(lines) * line_h + 60
         
-        # Centrar la caja verticalmente (zona inferior 60%)
         x = (1080 - box_w) / 2
         y = 1920 - box_h - 300
         
-        # Caja con borde dorado — igual que narrative bar de paneles
-        draw.rectangle([x, y, x + box_w, y + box_h],
-                       fill=(0, 0, 0, 200), outline=(255, 215, 0), width=6)
+        draw.rectangle([x, y, x + box_w, y + box_h], fill=(0, 0, 0, 200), outline=(255, 215, 0), width=6)
         
         curr_y = y + 30
         for line in lines:
             bbox = draw.textbbox((0, 0), line, font=f_main)
             lw = bbox[2] - bbox[0]
             lx = x + (box_w - lw) / 2
-            draw.text((lx + 3, curr_y + 3), line, font=f_main, fill=(0, 0, 0, 255))  # Sombra
-            draw.text((lx, curr_y), line, font=f_main, fill=(255, 215, 0))  # Oro
+            draw.text((lx + 3, curr_y + 3), line, font=f_main, fill=(0, 0, 0, 255))
+            draw.text((lx, curr_y), line, font=f_main, fill=(255, 215, 0))
             curr_y += line_h
         
         overlay_path = self.temp_dir / "lesson_overlay.png"
         overlay.save(overlay_path)
+        
+        # VF Estandarizado: 1080x1920, 30fps, yuv420p
+        vf_base = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30,format=yuv420p"
         
         if input_video.exists():
             cmd = [
                 "ffmpeg", "-y", "-i", str(input_video),
                 "-i", str(overlay_path),
                 "-filter_complex", 
-                "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1[bg]; "
-                "[bg][1:v]overlay=enable='between(t,0,7)',fade=t=in:st=0:d=0.5,fade=t=out:st=6.5:d=0.5",
-                "-t", "7", "-c:v", "libx264", "-pix_fmt", "yuv420p", str(output_video)
+                f"[0:v]{vf_base}[bg]; [bg][1:v]overlay=enable='between(t,0,7)',fade=t=in:st=0:d=0.5,fade=t=out:st=6.5:d=0.5",
+                "-t", "7", "-c:v", "libx264", str(output_video)
             ]
         else:
-            print("⚠️ Video teaching no encontrado, usando fondo negro.")
             cmd = [
                 "ffmpeg", "-y", "-f", "lavfi", "-i", "color=c=#0a0a1a:s=1080x1920:r=30:d=7",
                 "-i", str(overlay_path),
                 "-filter_complex", 
-                "[0:v][1:v]overlay=enable='between(t,0,7)',fade=t=in:st=0:d=0.5,fade=t=out:st=6.5:d=0.5",
-                "-t", "7", "-c:v", "libx264", "-pix_fmt", "yuv420p", str(output_video)
+                f"[0:v]{vf_base}[bg]; [bg][1:v]overlay=enable='between(t,0,7)',fade=t=in:st=0:d=0.5,fade=t=out:st=6.5:d=0.5",
+                "-t", "7", "-c:v", "libx264", str(output_video)
             ]
             
         subprocess.run(cmd, check=True)
-        print(f"✅ Pantalla de enseñanza generada: {output_video}")
         return output_video
 
     def render_motion_comic(self, panel_paths, title, audio_url, output_filename, story_data):
