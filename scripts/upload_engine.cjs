@@ -4,9 +4,9 @@ const path = require('path');
 
 async function uploadVideo() {
     const videoPath = process.argv[2] || 'output_final.mp4';
-    const title = process.env.VIDEO_TITLE || 'MusiChris Breath - Aliento Ministerial';
+    const title = (process.env.VIDEO_TITLE || 'MusiChris Breath') + ' #Shorts';
     
-    let description = process.env.VIDEO_DESCRIPTION || '🌬️ Un mensaje de fe y esperanza de parte de MusiChris Studio.';
+    let description = (process.env.VIDEO_DESCRIPTION || '🌬️ Un mensaje de fe y esperanza de parte de MusiChris Studio.') + '\n\n#Shorts #Ministerio #IA';
     if (process.env.VIDEO_DESCRIPTION_FILE && fs.existsSync(process.env.VIDEO_DESCRIPTION_FILE)) {
         description = fs.readFileSync(process.env.VIDEO_DESCRIPTION_FILE, 'utf8');
     }

@@ -96,8 +96,8 @@ class MusiChrisComicEngine:
                 "-i", str(overlay_path),
                 "-filter_complex", 
                 "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1[bg]; "
-                "[bg][1:v]overlay=enable='between(t,0,4.5)',fade=t=out:st=4.5:d=0.5",
-                "-t", "5", "-c:v", "libx264", "-pix_fmt", "yuv420p", str(output_video)
+                "[bg][1:v]overlay=enable='between(t,0,2.5)',fade=t=out:st=2.5:d=0.5",
+                "-t", "3", "-c:v", "libx264", "-pix_fmt", "yuv420p", str(output_video)
             ]
         else:
             print("⚠️ Video intro no encontrado, usando master_intro_bg.png")
@@ -224,7 +224,7 @@ class MusiChrisComicEngine:
             subprocess.run([
                 "ffmpeg", "-y", "-loop", "1", "-i", str(panel_img),
                 "-vf", f"{zoom_filter},fade=t=in:st=0:d=0.5",
-                "-t", "6", "-c:v", "libx264", "-pix_fmt", "yuv420p", str(vid_path)
+                "-t", "5", "-c:v", "libx264", "-pix_fmt", "yuv420p", str(vid_path)
             ], check=True)
             panel_vids.append(str(vid_path))
         return panel_vids
@@ -269,11 +269,11 @@ class MusiChrisComicEngine:
         bg_image = self.public_dir / "master_teaching_bg.png"
         
         subprocess.run([
-            "ffmpeg", "-y", "-loop", "1", "-t", "8", "-i", str(bg_image),
+            "ffmpeg", "-y", "-loop", "1", "-t", "6", "-i", str(bg_image),
             "-i", str(overlay_path),
             "-filter_complex", 
             "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1[bg]; "
-            "[bg][1:v]overlay=enable='between(t,0,8)',fade=t=in:st=0:d=0.5,fade=t=out:st=7.5:d=0.5",
+            "[bg][1:v]overlay=enable='between(t,0,6)',fade=t=in:st=0:d=0.5,fade=t=out:st=5.5:d=0.5",
             "-c:v", "libx264", "-pix_fmt", "yuv420p", str(output_video)
         ], check=True)
         return output_video
@@ -314,7 +314,7 @@ class MusiChrisComicEngine:
             "ffmpeg", "-y", "-i", str(outro_source),
             "-i", str(o_overlay_path),
             "-filter_complex", "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1[bg]; [bg][1:v]overlay=enable='between(t,0,7)'",
-            "-t", "7", "-c:v", "libx264", "-pix_fmt", "yuv420p", str(outro_final)
+            "-t", "5", "-c:v", "libx264", "-pix_fmt", "yuv420p", str(outro_final)
         ], check=True)
         
         vids = [intro_path] + panel_paths + [str(teaching_vid), str(outro_final)]
