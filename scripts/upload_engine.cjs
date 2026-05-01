@@ -4,7 +4,7 @@ const path = require('path');
 
 async function uploadVideo() {
     const videoPath = process.argv[2] || 'output_final.mp4';
-    const title = (process.env.VIDEO_TITLE || 'Mensaje de Fe') + ' | @MusiChris Studio #Shorts';
+    const title = (process.env.VIDEO_TITLE || 'Alabastro: Entrega Total') + ' #Shorts';
     
     let description = (process.env.VIDEO_DESCRIPTION || '🌬️ Una palabra de victoria para tu vida hoy.') + '\n\nSuscríbete para más contenido ministerial: @MusiChris Studio\n\n#Shorts #Fe #Cristiano #Victoria';
     if (process.env.VIDEO_DESCRIPTION_FILE && fs.existsSync(process.env.VIDEO_DESCRIPTION_FILE)) {
