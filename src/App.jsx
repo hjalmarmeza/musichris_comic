@@ -213,9 +213,7 @@ function App() {
         )}
       </main>
 
-      <footer className="footer-comic">
-         9 SCREENS • 4K RENDER • DIVINE AI
-      </footer>
+
     </div>
   );
 }
