@@ -95,32 +95,51 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          python3 << 'EOF'
-          import os
-          import json
+          cat > forge_runner.py << 'PYEOF'
+          import os, sys, json, traceback
+          sys.path.insert(0, os.getcwd())
           from scripts.comic_engine import MusiChrisComicEngine
           
-          with open('story_expanded.json', 'r') as f:
-              story_data = json.load(f)
-          
-          # Use generated title if available, fallback to payload
-          title = story_data.get('creative_title', os.getenv('VIDEO_TITLE', 'MusiChris Story').replace('🎨 MusiChris Comic: ', ''))
-          song_url = "${{ github.event.client_payload.song_url }}"
-          
-          engine = MusiChrisComicEngine()
-          
-          # If song_url is provided (Song to Story mode), use it. Else pick random.
-          if song_url and song_url != "":
-              bg_audio = song_url
-              print(f"🎵 Using Catalog Song: {song_url}")
-          else:
-              bg_song = engine.get_random_bg_music()
-              bg_audio = bg_song['audio_url']
-          
-          p_paths = engine.forge_panels(story_data['story'])
-          if p_paths:
-              engine.render_motion_comic(p_paths, title, bg_audio, "final_comic.mp4", story_data)
-          EOF
+          try:
+              with open('story_expanded.json', 'r') as f:
+                  story_data = json.load(f)
+              
+              print(f"✅ Story JSON cargado: {list(story_data.keys())}")
+              
+              title = story_data.get('creative_title', os.getenv('VIDEO_TITLE', 'MusiChris Story'))
+              song_url = "${{ github.event.client_payload.song_url }}"
+              
+              # Normalizar clave lesson/teaching
+              if 'lesson' in story_data and 'teaching' not in story_data:
+                  story_data['teaching'] = story_data['lesson']
+              
+              engine = MusiChrisComicEngine()
+              
+              if song_url and song_url.strip():
+                  bg_audio = song_url
+                  print(f"🎵 Usando canción: {song_url}")
+              else:
+                  bg_song = engine.get_random_bg_music()
+                  bg_audio = bg_song['audio_url']
+              
+              print(f"🎨 Forjando {len(story_data['story'])} paneles...")
+              p_paths = engine.forge_panels(story_data['story'])
+              print(f"✅ Paneles forjados: {len(p_paths)}")
+              
+              if not p_paths:
+                  print("❌ ERROR: No se generaron paneles.")
+                  sys.exit(1)
+              
+              print("🎬 Renderizando video final...")
+              result = engine.render_motion_comic(p_paths, title, bg_audio, "final_comic.mp4", story_data)
+              print(f"🎉 ¡GLORIA A DIOS! Video creado en: {result}")
+              
+          except Exception as e:
+              print(f"💥 ERROR CRÍTICO:")
+              traceback.print_exc()
+              sys.exit(1)
+          PYEOF
+          python3 forge_runner.py
 
       - name: 🟢 Setup Node.js
         uses: actions/setup-node@v3
