@@ -243,6 +243,9 @@ function App() {
       </main>
 
       <div className="reset-container">
+        <div className="build-info">BUILD v1.0.12</div>
+        <span onClick={() => window.location.reload(true)} className="refresh-link">🔄 FORZAR ACTUALIZACIÓN</span>
+        <br/><br/>
         <span onClick={resetToken} className="reset-link">⚙️ RECONFIGURAR ACCESO</span>
       </div>
     </div>
