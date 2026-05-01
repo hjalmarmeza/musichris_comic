@@ -26,7 +26,7 @@ jobs:
           const idea = `${{ github.event.client_payload.description }}`;
 
           const payload = {
-            model: 'llama3.1-70b',
+            model: 'llama-3.3-70b',
             messages: [
               {
                 role: 'system', 
