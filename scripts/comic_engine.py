@@ -296,36 +296,22 @@ class MusiChrisComicEngine:
         intro_path = self.generate_title_video(title)
         teaching_vid = self.generate_lesson_video(story_data.get('teaching', ''))
         
-        # Outro (Usar el que existe en assets/video)
-        outro_source = self.base_dir / "assets/video/outro.mp4"
+        # Outro generado programáticamente (no depende de archivo local)
         outro_final = self.temp_dir / "outro_branded.mp4"
-        
-        # Branding Outro
-        o_overlay = Image.new('RGBA', (1080, 1920), (0,0,0,0))
-        o_draw = ImageDraw.Draw(o_overlay)
-        font_path = "/System/Library/Fonts/Helvetica.ttc"
-        try:
-            f_brand = ImageFont.truetype(font_path, 60)
-            f_slogan = ImageFont.truetype(font_path, 40)
-        except: f_brand = f_slogan = ImageFont.load_default()
-        
-        def draw_centered(draw_obj, y, text, font, color):
-            bbox = draw_obj.textbbox((0, 0), text, font=font)
-            w = bbox[2] - bbox[0]
-            draw_obj.text(((1080-w)/2, y), text, font=font, fill=color)
-
-        draw_centered(o_draw, 1400, "@MusiChris_Studio", f_brand, (255, 215, 0))
-        draw_centered(o_draw, 1480, "MINISTERIO MUSICAL & IA", f_slogan, (255, 255, 255))
-        
-        o_overlay_path = self.temp_dir / "outro_overlay.png"
-        o_overlay.save(o_overlay_path)
-        
+        print("🎬 Generando outro ministerial programático...")
         subprocess.run([
-            "ffmpeg", "-y", "-i", str(outro_source),
-            "-i", str(o_overlay_path),
-            "-filter_complex", "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1[bg]; [bg][1:v]overlay=enable='between(t,0,7)'",
-            "-t", "5", "-c:v", "libx264", "-pix_fmt", "yuv420p", str(outro_final)
+            "ffmpeg", "-y",
+            "-f", "lavfi", "-i", "color=c=black:s=1080x1920:r=30:d=5",
+            "-vf", (
+                "drawtext=text='@MusiChris Studio':fontcolor=gold:fontsize=70:"
+                "x=(w-text_w)/2:y=(h/2)-60:box=1:boxcolor=black@0.5:boxborderw=10,"
+                "drawtext=text='Ministerio Musical':fontcolor=white:fontsize=45:"
+                "x=(w-text_w)/2:y=(h/2)+40:box=1:boxcolor=black@0.5:boxborderw=8"
+            ),
+            "-c:v", "libx264", "-pix_fmt", "yuv420p",
+            str(outro_final)
         ], check=True)
+        print(f"✅ Outro generado en: {outro_final}")
         
         vids = [intro_path] + panel_paths + [str(teaching_vid), str(outro_final)]
         
