@@ -87,10 +87,12 @@ jobs:
       - name: 📦 Install Python Dependencies
         run: pip install huggingface_hub Pillow requests python-dotenv
 
-      - name: 🎥 Install FFmpeg
+      - name: 🎥 Install FFmpeg + Fonts
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg
+          sudo apt-get install -y ffmpeg fonts-dejavu-core
+          echo "✅ Fuente instalada en:"
+          fc-list | grep -i dejavu | grep Bold
 
       - name: 🎨 Forging Panels & Video
         env:

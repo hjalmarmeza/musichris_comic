@@ -31,23 +31,17 @@ NEGATIVE_PROMPT = (
     "modern architecture, tattoos, watches, cars, oil painting, photorealistic"
 )
 
+# Fuente instalada vía apt-get en el workflow (fonts-dejavu-core)
+# Ruta confirmada en Ubuntu/GitHub Actions: /usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf
+FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+
 def get_font(size):
-    """Obtiene la mejor fuente disponible en cualquier sistema operativo."""
-    candidates = [
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",        # Linux/GitHub Actions
-        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf", # Linux alt
-        "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",          # Linux alt2
-        "/System/Library/Fonts/Helvetica.ttc",                          # macOS
-        "/System/Library/Fonts/Arial.ttf",                              # macOS alt
-    ]
-    for path in candidates:
-        try:
-            return ImageFont.truetype(path, size)
-        except:
-            continue
-    # Último recurso - fuente por defecto aumentada
-    print(f"⚠️ Fuente no encontrada, usando default para tamaño {size}")
-    return ImageFont.load_default(size=size)  # PIL 10.0+ soporta size
+    """Carga la fuente DejaVu instalada vía apt-get. Ruta fija y confirmada."""
+    try:
+        return ImageFont.truetype(FONT_PATH, size)
+    except Exception as e:
+        print(f"⚠️ ERROR: No se encontró {FONT_PATH}. Asegúrate de instalar fonts-dejavu-core en el workflow.")
+        raise e  # Falla explícitamente para no producir texto invisible
 
 def generate_image_hf_direct(prompt, retries=3):
     """Genera imagen usando FLUX.1-schnell estilo comic digital bíblico."""
@@ -87,27 +81,34 @@ class MusiChrisComicEngine:
         return generate_image_hf_direct(prompt + STYLE_PROMPT, retries)
 
     def generate_title_video(self, title):
-        """Genera la pantalla inicial usando video_pantalla_inicio.mp4 con texto correctamente dimensionado."""
+        """Genera la pantalla inicial. Títulos >20 caracteres se muestran en 2 líneas."""
         output_video = self.assets_dir / "intro_rendered.mp4"
         input_video = self.public_dir / "video_pantalla_inicio.mp4"
         
-        print(f"🎬 Generando intro premium para: {title}")
-        # Escapado seguro del título para ffmpeg
+        print(f"🎬 Generando intro para: {title}")
         safe_title = title.replace("'", "\u2019").replace('"', '').replace(':', ' -').replace('\\', '')
-        # Fuente disponible en Ubuntu GitHub Actions
-        font_linux = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
-        font_mac = "/System/Library/Fonts/Helvetica.ttc"
-        import platform
-        font_file = font_linux if platform.system() == 'Linux' else font_mac
         
-        drawtext_title = (
-            f"drawtext=fontfile='{font_file}':text='{safe_title}':fontcolor=gold:fontsize=55:"
-            f"x=(w-text_w)/2:y=(h/2)-150:box=1:boxcolor=black@0.5:boxborderw=20:"
-            f"line_spacing=10"
-        )
+        # Word wrap: si el título tiene más de 20 caracteres, dividir en 2 filas
+        if len(safe_title) > 20:
+            words = safe_title.split()
+            mid = len(words) // 2
+            line1 = ' '.join(words[:mid])
+            line2 = ' '.join(words[mid:])
+            drawtext_title = (
+                f"drawtext=fontfile='{FONT_PATH}':text='{line1}':fontcolor=gold:fontsize=55:"
+                f"x=(w-text_w)/2:y=(h/2)-220:box=1:boxcolor=black@0.5:boxborderw=15,"
+                f"drawtext=fontfile='{FONT_PATH}':text='{line2}':fontcolor=gold:fontsize=55:"
+                f"x=(w-text_w)/2:y=(h/2)-140:box=1:boxcolor=black@0.5:boxborderw=15"
+            )
+        else:
+            drawtext_title = (
+                f"drawtext=fontfile='{FONT_PATH}':text='{safe_title}':fontcolor=gold:fontsize=55:"
+                f"x=(w-text_w)/2:y=(h/2)-150:box=1:boxcolor=black@0.5:boxborderw=15"
+            )
+        
         drawtext_brand = (
-            f"drawtext=fontfile='{font_file}':text='@MusiChris Studio':fontcolor=white:fontsize=40:"
-            f"x=(w-text_w)/2:y=(h/2)+50:box=1:boxcolor=black@0.4:boxborderw=12"
+            f"drawtext=fontfile='{FONT_PATH}':text='@MusiChris Studio':fontcolor=white:fontsize=40:"
+            f"x=(w-text_w)/2:y=(h/2)+60:box=1:boxcolor=black@0.4:boxborderw=12"
         )
         vf = f"{drawtext_title},{drawtext_brand}"
         
@@ -118,7 +119,7 @@ class MusiChrisComicEngine:
                 "-t", "6", "-c:v", "libx264", "-pix_fmt", "yuv420p", str(output_video)
             ]
         else:
-            print("⚠️ Video intro no encontrado, usando fallback de color.")
+            print("⚠️ Video intro no encontrado, usando fallback.")
             cmd = [
                 "ffmpeg", "-y", "-f", "lavfi", "-i", "color=c=#1a0a00:s=1080x1920:r=30:d=6",
                 "-vf", vf,
@@ -126,6 +127,7 @@ class MusiChrisComicEngine:
             ]
             
         subprocess.run(cmd, check=True)
+        print(f"✅ Intro generado: {output_video}")
         return str(output_video)
 
 
