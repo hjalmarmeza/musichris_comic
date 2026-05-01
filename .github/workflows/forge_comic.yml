@@ -127,4 +127,6 @@ jobs:
           YOUTUBE_CREDENTIALS: ${{ secrets.YOUTUBE_CREDENTIALS }}
           YOUTUBE_TOKEN: ${{ secrets.YOUTUBE_TOKEN }}
         run: |
-          node scripts/upload_engine.cjs final_comic.mp4
+          VIDEO_FILE=$(ls renders/*.mp4 | head -n 1)
+          echo "📤 Detectado video para subir: $VIDEO_FILE"
+          node scripts/upload_engine.cjs "$VIDEO_FILE"
