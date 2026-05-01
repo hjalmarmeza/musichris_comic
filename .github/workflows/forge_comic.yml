@@ -58,20 +58,27 @@ jobs:
               { role: 'user', content: `Título: ${rawTitle}. Contexto: ${cleanIdea}.` }
             ]);
 
-            console.log('🛡️ [SUPERVISOR] Auditando guion...');
+            console.log('🛡️ [SUPERVISOR] Realizando Auditoría Teológica y Artística...');
             let audit = await callCerebras([
-              { role: 'system', content: 'Eres el Supervisor de Calidad de @MusiChris. REGLAS: 1. No alucinaciones (ej: pájaros si no hay). 2. Texto máx 12 palabras. 3. Prompts descriptivos en inglés. Si hay errores, responde con "ERROR: [motivo]". Si está perfecto, responde con "APROBADO".' },
-              { role: 'user', content: `Contexto Original: ${cleanIdea}\n\nGuion Propuesto:\n${draft}` }
+              { 
+                role: 'system', 
+                content: 'Eres el Auditor Teológico de @MusiChris. Tu misión es asegurar la FIDELIDAD BÍBLICA ABSOLUTA. REGLAS: 1. Sujeta cada palabra a la Biblia. 2. Identifica alucinaciones (ej: pájaros, fuegos o personajes extraños). 3. Asegura que los personajes sean los correctos. 4. Los prompts deben ser visualmente representativos de la escena bíblica. Si hay fallos, responde EXACTAMENTE: "RECHAZADO: [Error teológico/artístico específico] -> CORRECCIÓN: [Qué debe hacer el creador]". Si está perfecto, responde "APROBADO".' 
+              },
+              { role: 'user', content: `Contexto Sagrado: ${cleanIdea}\n\nPropuesta de Guion:\n${draft}` }
             ]);
 
-            if (audit.includes('ERROR')) {
-              console.log(`⚠️ Calidad rechazada: ${audit}. Reintentando con correcciones...`);
+            if (audit.includes('RECHAZADO')) {
+              console.log(`⚠️ Feedback del Supervisor: ${audit}`);
+              console.log('🔄 [CREADOR] Aplicando correcciones teológicas...');
               draft = await callCerebras([
-                { role: 'system', content: 'Eres el Creador. Corrige el guion basado en el feedback del Supervisor.' },
-                { role: 'user', content: `Guion anterior: ${draft}\n\nFeedback Supervisor: ${audit}\n\nGenera la versión corregida final en JSON.` }
+                { 
+                  role: 'system', 
+                  content: 'Eres el Creador de @MusiChris. Debes corregir tu trabajo siguiendo EXACTAMENTE las instrucciones del Auditor Teológico. No discutas, solo aplica la corrección manteniendo el formato JSON SCHEMA.' 
+                },
+                { role: 'user', content: `Guion con errores: ${draft}\n\nReporte del Auditor: ${audit}\n\nContexto Original: ${cleanIdea}\n\nGenera la versión corregida FINAL.` }
               ]);
             } else {
-              console.log('✅ Calidad Aprobada por el Supervisor.');
+              console.log('✨ Auditoría Superada: El mensaje es fiel y representativo.');
             }
 
             const jsonMatch = draft.match(/\{[\s\S]*\}/);
