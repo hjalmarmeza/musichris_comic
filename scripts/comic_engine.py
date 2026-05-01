@@ -4,6 +4,7 @@ import json
 import time
 import subprocess
 import random
+import re
 from pathlib import Path
 from dotenv import load_dotenv
 from huggingface_hub import InferenceClient
