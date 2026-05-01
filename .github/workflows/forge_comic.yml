@@ -121,6 +121,20 @@ jobs:
               # Normalizar clave lesson/teaching
               if 'lesson' in story_data and 'teaching' not in story_data:
                   story_data['teaching'] = story_data['lesson']
+
+              # Normalizar Estructura de Historia (Soporte para lista 'story' o llaves 'panel1'...'panel8')
+              if 'story' not in story_data or not isinstance(story_data['story'], list):
+                  panels = []
+                  for i in range(1, 10):
+                      p_key = f"panel{i}"
+                      if p_key in story_data:
+                          panels.append(story_data[p_key])
+                  
+                  if not panels:
+                      # Intentar buscar cualquier objeto que parezca un panel si las llaves fallan
+                      panels = [v for k, v in story_data.items() if isinstance(v, dict) and ('prompt' in v or 'text' in v)]
+                  
+                  story_data['story'] = panels
               
               engine = MusiChrisComicEngine()
               
