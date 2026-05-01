@@ -435,3 +435,22 @@
   from { transform: scale(0) rotate(-20deg); opacity: 0; }
   to { transform: scale(1) rotate(0deg); opacity: 1; }
 }
+
+.reset-container {
+  margin-top: 30px;
+  padding-bottom: 20px;
+  text-align: center;
+}
+
+.reset-link {
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.3);
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: underline;
+}
+
+.reset-link:hover {
+  color: var(--accent-gold);
+}

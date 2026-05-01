@@ -81,7 +81,7 @@ function App() {
       const response = await fetch(`https://api.github.com/repos/${GH_REPO}/dispatches`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${GH_TOKEN}`,
+          'Authorization': `Bearer ${GH_TOKEN.trim()}`,
           'Accept': 'application/vnd.github.v3+json',
           'Content-Type': 'application/json',
         },
@@ -101,11 +101,27 @@ function App() {
           setShowSplash(true);
         }, 4000);
       } else {
-        throw new Error();
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Error GitHub:', response.status, errorData);
+        setStatus(`❌ ERROR ${response.status}: ${errorData.message || 'RECHAZADO'}`);
+        if (response.status === 401) {
+          localStorage.removeItem('GH_TOKEN');
+          setTimeout(() => window.location.reload(), 3000);
+        } else {
+          setTimeout(() => setIsForging(false), 5000);
+        }
       }
     } catch (err) {
-      setStatus('❌ ERROR DE PROTOCOLO');
-      setTimeout(() => setIsForging(false), 3000);
+      console.error('Error conexión:', err);
+      setStatus('❌ ERROR DE CONEXIÓN (CORS/RED)');
+      setTimeout(() => setIsForging(false), 5000);
+    }
+  };
+
+  const resetToken = () => {
+    if (confirm('¿Quieres borrar el Token de acceso actual?')) {
+      localStorage.removeItem('GH_TOKEN');
+      window.location.reload();
     }
   };
 
@@ -220,6 +236,9 @@ function App() {
         )}
       </main>
 
+      <div className="reset-container">
+        <span onClick={resetToken} className="reset-link">⚙️ RECONFIGURAR ACCESO</span>
+      </div>
     </div>
   );
 }
