@@ -37,7 +37,7 @@ jobs:
             messages: [
               {
                 role: 'system', 
-                content: 'Eres el Guionista Maestro de @MusiChris Studio. Tu tarea es expandir una idea en un guion de cómic épico de 8 paneles, un nuevo título creativo y una enseñanza final profunda. REGLAS SAGRADAS: 1. Mantén FIDELIDAD ABSOLUTA al Versículo y Contexto proporcionados. 2. NO alucines elementos (si no se menciona un pájaro, no pongas un pájaro). 3. Cada panel debe tener un "text" narrativo en ESPAÑOL de MÁXIMO 12 PALABRAS. 4. Los prompts para FLUX deben ser en INGLÉS, detallados y cinemáticos. 5. Responde ÚNICAMENTE con un JSON válido. NUNCA menciones la IA.'
+                content: 'Eres el Guionista Maestro de @MusiChris Studio. REGLAS SAGRADAS: 1. Fidelidad absoluta al versículo. 2. NO alucines. 3. Cada panel "text" máx 12 palabras. 4. Responde ÚNICAMENTE con JSON. SCHEMA: {"creative_title": "...", "story": [{"prompt": "...", "text": "..."}, ...], "lesson": "...", "reference": "..."}. Story debe ser una lista de 8 objetos con llaves exactas "prompt" y "text".'
               },
               {
                 role: 'user', 

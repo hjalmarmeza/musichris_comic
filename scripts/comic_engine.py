@@ -355,10 +355,15 @@ class MusiChrisComicEngine:
         panel_vids = []
         for i, p in enumerate(story_panels):
             print(f"🎨 Forjando Panel {i+1}...")
-            img_data = self.generate_image_hf(p['prompt'])
+            
+            # Recuperación robusta de llaves (soporte para prompt/image_prompt y text/narrative)
+            p_prompt = p.get('prompt') or p.get('image_prompt') or p.get('visual') or "Cinematic biblical scene"
+            p_text = p.get('text') or p.get('narrative') or p.get('description') or "..."
+            
+            img_data = self.generate_image_hf(p_prompt)
             if not img_data: continue
             
-            baked_data = self.add_text_to_image(img_data, p['text'])
+            baked_data = self.add_text_to_image(img_data, p_text)
             
             panel_img = self.temp_dir / f"panel_{i}.jpg"
             with open(panel_img, "wb") as f: f.write(baked_data)
