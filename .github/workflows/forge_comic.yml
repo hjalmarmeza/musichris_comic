@@ -127,4 +127,4 @@ jobs:
           YOUTUBE_CREDENTIALS: ${{ secrets.YOUTUBE_CREDENTIALS }}
           YOUTUBE_TOKEN: ${{ secrets.YOUTUBE_TOKEN }}
         run: |
-          node scripts/upload_engine.js renders/final_comic.mp4
+          node scripts/upload_engine.cjs renders/final_comic.mp4
