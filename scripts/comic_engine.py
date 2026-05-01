@@ -420,7 +420,7 @@ class MusiChrisComicEngine:
         x = (1080 - box_w) / 2
         y = 1920 - box_h - 300
         
-        draw.rectangle([x, y, x + box_w, y + box_h], fill=(0, 0, 0, 200), outline=(255, 215, 0), width=6)
+        draw.rectangle([x, y, x + box_w, y + box_h], fill=(0, 0, 0, 100), outline=(255, 215, 0), width=6)
         
         curr_y = y + 30
         for line in lines:
