@@ -74,9 +74,9 @@
 
 /* --- DASHBOARD --- */
 .comic-header-mini {
-  padding: 1rem 1.5rem 0.5rem;
+  padding: 0.5rem 1rem 0;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
 }
 
@@ -110,10 +110,10 @@
 /* --- MODE SELECTOR --- */
 .mode-selector {
   display: flex;
-  margin: 0.5rem 1.5rem;
+  margin: 0.2rem 1rem;
   background: rgba(255, 255, 255, 0.05);
-  padding: 5px;
-  border-radius: 15px;
+  padding: 3px;
+  border-radius: 12px;
   gap: 5px;
 }
 
@@ -262,7 +262,12 @@
 }
 
 .forge-button-glow {
-  width: 100%;
+  position: fixed;
+  bottom: 15px;
+  left: 15px;
+  right: 15px;
+  width: calc(100% - 30px);
+  z-index: 1000;
   padding: 16px;
   background: linear-gradient(135deg, var(--accent-gold), #B8860B);
   border: none;
@@ -272,7 +277,7 @@
   font-size: 0.9rem;
   letter-spacing: 1.5px;
   cursor: pointer;
-  box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5), 0 0 15px rgba(212, 175, 55, 0.4);
   transition: all 0.3s ease;
   animation: pulse-glow 2s infinite;
   text-transform: uppercase;
