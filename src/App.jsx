@@ -138,6 +138,7 @@ function App() {
       </div>
     );
   }
+  console.log('MusiChris Comic Forge v1.0.9 - Ready');
 
   return (
     <div className="mobile-container fade-in">
