@@ -57,6 +57,12 @@ jobs:
                 const response = JSON.parse(data);
                 let content = response.choices[0].message.content;
                 content = content.replace(/```json|```/g, '').trim();
+                // Filtro de pureza: Eliminar caracteres de control y sanitizar saltos de línea
+                content = content.replace(/[\u0000-\u001F\u007F-\u009F]/g, (match) => {
+                  if (match === '\n') return '\\n';
+                  if (match === '\r') return '\\r';
+                  return '';
+                });
                 fs.writeFileSync('story_expanded.json', content);
                 console.log('✅ Historia y enseñanza de impacto generadas con éxito.');
               } else {
