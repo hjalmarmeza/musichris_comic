@@ -54,7 +54,10 @@ jobs:
           async function produceWithSupervisor() {
             console.log('🎭 [CREADOR] Generando borrador...');
             let draft = await callCerebras([
-              { role: 'system', content: 'Eres el Creador de @MusiChris. SCHEMA: {"creative_title": "...", "story": [{"prompt": "...", "text": "..."}, ...], "lesson": "...", "reference": "..."}. Story: lista de 8 objetos.' },
+              { 
+                role: 'system', 
+                content: 'Eres el Creador de @MusiChris. SCHEMA: {"creative_title": "...", "story": [{"prompt": "...", "text": "..."}, ...], "lesson": "...", "reference": "..."}. Story: lista de 8 objetos. REGLAS: 1. NARRATIVA PURA: Usa los 8 paneles para contar la historia bíblica/histórica de forma cronológica. 2. PROHIBIDO: No uses "ganchos" personales, reflexiones o preguntas al lector (ej: No digas "Recuerda cuando...", "Te has sentido..."). 3. PERSPECTIVA: Escribe en tercera persona como un narrador histórico. Cada panel debe ser un avance en la trama real.' 
+              },
               { role: 'user', content: `Título: ${rawTitle}. Contexto: ${cleanIdea}.` }
             ]);
 
@@ -62,7 +65,7 @@ jobs:
             let audit = await callCerebras([
               { 
                 role: 'system', 
-                content: 'Eres el Auditor Teológico de @MusiChris. Tu misión es asegurar la FIDELIDAD BÍBLICA LITERAL. REGLAS: 1. El guion DEBE coincidir con el versículo y foco del "Contexto Sagrado" proporcionado. 2. RECHAZA interpretaciones modernas o simbólicas que no estén en el texto bíblico original (ej: no cambies Nube de Fuego por Nube del Espíritu si no está en el verso). 3. Asegura que los personajes y lugares sean históricamente correctos según la Biblia. 4. Los prompts deben ser visualmente impactantes y fieles al relato. Si hay fallos, responde EXACTAMENTE: "RECHAZADO: [Error teológico específico] -> CORRECCIÓN: [Instrucción técnica para el creador]". Si está perfecto, responde "APROBADO".' 
+                content: 'Eres el Auditor Teológico de @MusiChris. Tu misión es asegurar la FIDELIDAD BÍBLICA LITERAL y NARRATIVA PURA. REGLAS: 1. El guion DEBE coincidir con el versículo y foco del "Contexto Sagrado". 2. RECHAZA interpretaciones modernas o simbólicas. 3. PROHIBIDO hablarle al lector o usar ganchos como "¿Recuerdas...?" o "Alguna vez...". Toda la historia debe ser narrada en tercera persona. 4. Asegura que los personajes y lugares sean correctos. Si hay fallos, responde EXACTAMENTE: "RECHAZADO: [Error específico] -> CORRECCIÓN: [Instrucción técnica]". Si está perfecto, responde "APROBADO".' 
               },
               { role: 'user', content: `Contexto Sagrado (Fuente de Verdad): ${cleanIdea}\n\nPropuesta de Guion a Auditar:\n${draft}` }
             ]);
@@ -73,7 +76,7 @@ jobs:
               draft = await callCerebras([
                 { 
                   role: 'system', 
-                  content: 'Eres el Creador de @MusiChris. Debes corregir el guion siguiendo las instrucciones del Auditor. IMPORTANTE: Tu respuesta debe ser EXCLUSIVAMENTE el objeto JSON corregido, sin explicaciones ni markdown. Mantén el SCHEMA: {"creative_title": "...", "story": [{"prompt": "...", "text": "..."}, ...], "lesson": "...", "reference": "..."}.' 
+                  content: 'Eres el Creador de @MusiChris. Debes corregir el guion siguiendo las instrucciones del Auditor. REGLAS CRÍTICAS: 1. Tu respuesta debe ser EXCLUSIVAMENTE el objeto JSON corregido. 2. PROHIBIDO usar ganchos personales o hablarle al lector ("¿Recuerdas...?", "Has visto..."). 3. Mantén narrativa pura en tercera persona sobre los hechos bíblicos. SCHEMA: {"creative_title": "...", "story": [{"prompt": "...", "text": "..."}, ...], "lesson": "...", "reference": "..."}.' 
                 },
                 { role: 'user', content: `Guion anterior: ${draft}\n\nFeedback del Auditor: ${audit}\n\nContexto Sagrado: ${cleanIdea}\n\nGenera el JSON corregido ahora.` }
               ]);
