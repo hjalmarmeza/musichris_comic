@@ -192,27 +192,33 @@ function App() {
                     );
                   })}
                 </div>
-                {selectedSong && (
+                {selectedSong && !isForging && (
                   <div className="selection-preview fade-in">
-                    <p>📖 {selectedSong.context?.verse || 'Cita no disponible'}</p>
-                    <p className="focus-text">🎯 {selectedSong.context?.focus?.substring(0, 80)}...</p>
+                    <div className="preview-card">
+                      <span className="preview-label">ADN MINISTERIAL:</span>
+                      <p className="preview-verse">📖 {selectedSong.context?.verse || 'Cita no disponible'}</p>
+                      <p className="preview-focus">🎯 {selectedSong.context?.focus}</p>
+                    </div>
+                    
+                    <button 
+                      className="forge-button-glow"
+                      onClick={handleForge}
+                      disabled={isForging}
+                    >
+                      {status || '🚀 INICIAR FORJA DE CÓMIC'}
+                    </button>
                   </div>
                 )}
               </div>
             )}
-
-            <button className="forge-btn-premium" onClick={triggerForgeAction} style={{ marginTop: '20px' }}>
-              {mode === 'manual' ? 'FORJAR HISTORIA' : 'FORJAR DESDE CANCIÓN'}
-            </button>
           </>
         ) : (
-          <div className="status-container">
+          <div className="forge-status-overlay fade-in">
             <div className="ai-loader"></div>
             <p className="status-text">{status}</p>
           </div>
         )}
       </main>
-
 
     </div>
   );
