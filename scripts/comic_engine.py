@@ -16,28 +16,30 @@ from PIL import Image, ImageDraw, ImageFont, ImageStat
 # Configuración Maestra
 load_dotenv()
 HF_TOKEN = os.getenv("HF_TOKEN")
-MODEL_ID = "stabilityai/stable-diffusion-xl-base-1.0"
+MODEL_ID = "black-forest-labs/FLUX.1-schnell"
 client = InferenceClient(provider="hf-inference", api_key=HF_TOKEN)
 
-STYLE_PROMPT = ", biblical times, ancient Israel, first century setting, historical accuracy, modest humble clothing, professional digital comic art, oil painting texture, cinematic lighting, sharp detail, 4k, vertical composition"
+STYLE_PROMPT = (
+    ", in the style of Gustave Dore biblical engravings and James Tissot religious paintings, "
+    "ancient Israel, first century, solemn and reverent atmosphere, classical religious art, "
+    "detailed oil painting texture, dramatic lighting, no modern elements"
+)
 NEGATIVE_PROMPT = (
     "modern objects, soap dispensers, jewelry, earrings, piercings, modern accessories, "
     "sunglasses, romantic intimacy, seductive, low cut clothing, electricity, neon, plastic, "
     "glass bottles with pumps, computers, phones, extra fingers, distorted faces, blurry, "
-    "modern architecture, tattoos, watches, cars"
+    "modern architecture, tattoos, watches, cars, photorealistic photography"
 )
 
 def generate_image_hf_direct(prompt, retries=3):
-    """Genera imagen usando InferenceClient con SDXL y negative_prompt real."""
+    """Genera imagen usando FLUX.1-schnell con estilo Gustave Doré bíblico."""
     for i in range(retries):
         try:
-            print(f"  🖼️ Generando imagen (SDXL - Intento {i+1})...")
+            print(f"  🖼️ Generando imagen (FLUX Bíblico - Intento {i+1})...")
             image = client.text_to_image(
                 prompt,
                 model=MODEL_ID,
                 negative_prompt=NEGATIVE_PROMPT,
-                num_inference_steps=35,
-                guidance_scale=8.5
             )
             img_byte_arr = io.BytesIO()
             image.save(img_byte_arr, format='PNG')
@@ -249,24 +251,27 @@ class MusiChrisComicEngine:
         return output.getvalue()
 
     def auto_split_story(self, description):
-        """Divide una descripción larga en 7 fragmentos (Panel 2 al 8)."""
+        """Divide en 7 paneles (2 al 8) con estilo Gustave Doré incrustado en cada prompt."""
         sentences = re.split(r'(?<=[.!?])\s+', description)
         panels = []
-        # El usuario pidió del 2 al 8 (7 paneles en total)
         for i in range(7):
             idx = i % len(sentences)
             text = sentences[idx]
             
-            # Guardarraíles Bíblicos
-            guardrails = "biblical times, humble setting, no modern objects."
-            if "Jesús" in text or "Jesus" in text:
-                guardrails += " Jesus Christ should look like a dignified first-century Jewish man with a beard and humble robe, compassionate expression, NO jewelry, NO modern hair styles."
-            if "mujer" in text or "woman" in text:
-                guardrails += " Modest biblical clothing, respectful posture."
-            if "alabastro" in text or "jar" in text:
-                guardrails += " The jar should be a simple ancient clay or stone vessel, NO glass pump bottles."
+            # Estilo Artístico Bíblico base
+            art_style = "Gustave Dore style biblical engraving, solemn religious scene, ancient Jerusalem"
 
-            prompt = f"Comic panel {i+2}: {text}. {guardrails} Cinematic lighting, high detail."
+            # Contexto específico por personaje/objeto detectado
+            if "Jesús" in text or "Jesus" in text or "Señor" in text:
+                art_style += ", Jesus as a dignified first-century Jewish man with beard and humble robe, compassionate face"
+            if "mujer" in text or "woman" in text or "pecadora" in text:
+                art_style += ", humble woman in long modest first-century Jewish robes, head covered"
+            if "alabastro" in text or "frasco" in text or "perfume" in text:
+                art_style += ", simple ancient stone alabaster jar, no glass, no pump"
+            if "fariseo" in text or "Simón" in text:
+                art_style += ", proud religious leader in ornate Jewish robes, ancient dining room"
+
+            prompt = f"{art_style}. Scene: {text}. No modern elements, no jewelry on men, no revealing clothing."
             panels.append({"prompt": prompt, "text": text, "panel_num": i+2})
         return panels
 
