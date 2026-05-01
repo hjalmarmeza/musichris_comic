@@ -27,7 +27,7 @@ function App() {
   });
 
   const GH_TOKEN = localStorage.getItem('GH_TOKEN') || '';
-  const GH_REPO = 'hjalmarmeza/musichriscomics';
+  const GH_REPO = 'hjalmarmeza/musichris_comic';
 
   const allForged = [...new Set([...forgedSongs, ...historyData])];
 
@@ -114,7 +114,7 @@ function App() {
       <div className="splash-screen" onClick={() => setShowSplash(false)}>
         <div className="splash-overlay"></div>
         <div className="splash-content fade-in">
-          <img src="/musichriscomics/logo_v4.png" alt="Logo" className="pulse-logo" style={{ width: '180px' }} />
+          <img src="/musichris_comic/logo_v4.png" alt="Logo" className="pulse-logo" style={{ width: '180px' }} />
           <h1 className="splash-title" style={{ fontSize: '2.5rem' }}>MUSICHRIS</h1>
           <p style={{ letterSpacing: '8px', fontSize: '0.6rem', opacity: 0.6, marginTop: '-10px', marginBottom: '20px' }}>COMIC ENGINE</p>
           <div className="tap-to-start">TOCA PARA INICIAR PRODUCCIÓN</div>
@@ -126,7 +126,7 @@ function App() {
   return (
     <div className="mobile-container fade-in">
       <header className="comic-header-mini">
-        <img src="/musichriscomics/logo_v4.png" alt="Logo" style={{ width: '50px', cursor: 'pointer' }} onClick={() => setShowSplash(true)} />
+        <img src="/musichris_comic/logo_v4.png" alt="Logo" style={{ width: '50px', cursor: 'pointer' }} onClick={() => setShowSplash(true)} />
       </header>
 
       <div className="mode-selector">
