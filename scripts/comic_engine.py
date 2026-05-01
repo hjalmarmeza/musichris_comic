@@ -16,10 +16,29 @@ from PIL import Image, ImageDraw, ImageFont, ImageStat
 # Configuración Maestra
 load_dotenv()
 HF_TOKEN = os.getenv("HF_TOKEN")
-MODEL_ID = "black-forest-labs/FLUX.1-schnell" 
-client = InferenceClient(api_key=HF_TOKEN, timeout=90)
+MODEL_ID = "stabilityai/stable-diffusion-xl-base-1.0"
+HF_API_URL = f"https://api-inference.huggingface.co/models/{MODEL_ID}"
 
 STYLE_PROMPT = ", professional digital comic art, cinematic lighting, sharp detail, 4k, vertical composition"
+
+def generate_image_hf_direct(prompt, retries=3):
+    """Genera imagen via HTTP directo a HuggingFace (sin InferenceClient)."""
+    headers = {"Authorization": f"Bearer {HF_TOKEN}"}
+    payload = {"inputs": prompt, "options": {"wait_for_model": True}}
+    
+    for i in range(retries):
+        try:
+            print(f"  🖼️ Generando imagen (intento {i+1})...")
+            response = requests.post(HF_API_URL, headers=headers, json=payload, timeout=120)
+            if response.status_code == 200:
+                return response.content
+            else:
+                print(f"  ⚠️ HF Error {response.status_code}: {response.text[:200]}")
+                time.sleep(15)
+        except Exception as e:
+            print(f"  ⚠️ Intento {i+1} falló: {e}")
+            time.sleep(10)
+    return None
 
 class MusiChrisComicEngine:
     def __init__(self):
@@ -36,16 +55,7 @@ class MusiChrisComicEngine:
 
     def generate_image_hf(self, prompt, retries=3):
         """Genera imagen con IA y retorna bytes."""
-        for i in range(retries):
-            try:
-                image = client.text_to_image(prompt + STYLE_PROMPT, model=MODEL_ID)
-                img_byte_arr = io.BytesIO()
-                image.save(img_byte_arr, format='PNG')
-                return img_byte_arr.getvalue()
-            except Exception as e:
-                print(f"⚠️ Intento {i+1} falló: {e}")
-                time.sleep(10)
-        return None
+        return generate_image_hf_direct(prompt + STYLE_PROMPT, retries)
 
     def generate_title_video(self, title):
         """Genera la pantalla inicial programáticamente (sin depender de archivos locales)."""
