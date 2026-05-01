@@ -19,14 +19,17 @@ HF_TOKEN = os.getenv("HF_TOKEN")
 MODEL_ID = "black-forest-labs/FLUX.1-schnell"
 client = InferenceClient(provider="hf-inference", api_key=HF_TOKEN)
 
-STYLE_PROMPT = ", professional digital comic art, cinematic lighting, sharp detail, 4k, vertical composition"
+STYLE_PROMPT = ", biblical times, ancient Israel, first century setting, historical accuracy, modest humble clothing, professional digital comic art, oil painting texture, cinematic lighting, sharp detail, 4k, vertical composition"
+NEGATIVE_PROMPT = "modern objects, soap dispensers, jewelry, earrings, piercings, modern accessories, sunglasses, romantic intimacy, seductive, low cut clothing, electricity, neon, plastic, glass bottles with pumps, computers, phones"
 
 def generate_image_hf_direct(prompt, retries=3):
     """Genera imagen via InferenceClient con provider hf-inference."""
     for i in range(retries):
         try:
             print(f"  🖼️ Generando imagen (intento {i+1})...")
-            image = client.text_to_image(prompt, model=MODEL_ID)
+            # Enriquecemos el prompt con el negative prompt de forma textual si el modelo no lo soporta como parámetro
+            full_prompt = f"{prompt}. (AVOID: {NEGATIVE_PROMPT})"
+            image = client.text_to_image(full_prompt, model=MODEL_ID)
             img_byte_arr = io.BytesIO()
             image.save(img_byte_arr, format='PNG')
             img_bytes = img_byte_arr.getvalue()
@@ -184,36 +187,36 @@ class MusiChrisComicEngine:
         draw = ImageDraw.Draw(overlay)
         
         font_path = "/System/Library/Fonts/Helvetica.ttc"
-        try: font = ImageFont.truetype(font_path, 48)
+        try: font = ImageFont.truetype(font_path, 72) # Aumentado de 48 a 72 para legibilidad
         except: font = ImageFont.load_default()
 
-        # Envolver texto
+        # Envolver texto - Ajustado para fuente más grande
         words = text.split(); lines = []; curr = ""
         for w in words:
-            if len(curr + w) < 32: curr += w + " "
+            if len(curr + w) < 22: curr += w + " " # Menos caracteres por línea por fuente más grande
             else: lines.append(curr.strip()); curr = w + " "
         lines.append(curr.strip())
         
-        line_h = 60; box_w = 0
+        line_h = 90; box_w = 0 # Aumentado line_h
         for l in lines:
             bbox = draw.textbbox((0, 0), l, font=font)
             box_w = max(box_w, bbox[2] - bbox[0])
-        box_w += 40; box_h = len(lines) * line_h + 30
+        box_w += 80; box_h = len(lines) * line_h + 60
         
-        # Colocar el cuadro de texto en la parte INFERIOR-CENTRAL (Estándar de cine/comic)
-        # Margin de 100px desde el fondo para no tocar el borde
+        # Colocar el cuadro de texto en la parte INFERIOR-CENTRAL
         x = (1080 - box_w) / 2
-        y = 1920 - box_h - 150 
+        y = 1920 - box_h - 250 # Subido un poco más para que no se pierda en la UI de YouTube
         
-        # Fondo con bordes redondeados (simulado con rectángulo) y borde dorado
-        draw.rectangle([x, y, x + box_w, y + box_h], fill=(0,0,0,200), outline=(255, 215, 0), width=3)
+        # Fondo tipo "Narrative Bar" más elegante
+        draw.rectangle([x, y, x + box_w, y + box_h], fill=(0,0,0,180), outline=(255, 215, 0), width=5)
         
-        curr_y = y + 15
+        curr_y = y + 30
         for line in lines:
-            # Centrar cada línea individualmente dentro del cuadro
             bbox = draw.textbbox((0, 0), line, font=font)
             line_w = bbox[2] - bbox[0]
             line_x = x + (box_w - line_w) / 2
+            # Sombra de texto para máxima legibilidad
+            draw.text((line_x + 3, curr_y + 3), line, font=font, fill=(0,0,0,255))
             draw.text((line_x, curr_y), line, font=font, fill=(255, 215, 0)) # Oro Divine
             curr_y += line_h
             
@@ -223,15 +226,23 @@ class MusiChrisComicEngine:
         return output.getvalue()
 
     def auto_split_story(self, description):
-        """Divide una descripción larga en 8 fragmentos para los paneles."""
+        """Divide una descripción larga en 8 fragmentos con guardarraíles bíblicos."""
         sentences = re.split(r'(?<=[.!?])\s+', description)
         panels = []
         for i in range(8):
-            # Tomar una oración o rotar si hay pocas
             idx = i % len(sentences)
             text = sentences[idx]
-            # Prompt enriquecido para la IA
-            prompt = f"Panel {i+1} for a christian music story: {text}. Divine light, ethereal atmosphere, cinematic comic style."
+            
+            # Guardarraíles Bíblicos según el texto
+            guardrails = "biblical times, humble setting, no modern objects."
+            if "Jesús" in text or "Jesus" in text:
+                guardrails += " Jesus Christ should look like a dignified first-century Jewish man with a beard and humble robe, compassionate expression, NO jewelry, NO modern hair styles."
+            if "mujer" in text or "woman" in text:
+                guardrails += " Modest biblical clothing, respectful posture."
+            if "alabastro" in text or "jar" in text:
+                guardrails += " The jar should be a simple ancient clay or stone vessel, NO glass pump bottles."
+
+            prompt = f"Comic panel: {text}. {guardrails} Cinematic lighting, high detail, masterpiece."
             panels.append({"prompt": prompt, "text": text})
         return panels
 
