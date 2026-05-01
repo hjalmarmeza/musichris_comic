@@ -17,49 +17,33 @@ from PIL import Image, ImageDraw, ImageFont, ImageStat
 load_dotenv()
 HF_TOKEN = os.getenv("HF_TOKEN")
 MODEL_ID = "stabilityai/stable-diffusion-xl-base-1.0"
-HF_API_URL = f"https://api-inference.huggingface.co/models/{MODEL_ID}"
-# Usamos un cliente directo para mayor control sobre el negative prompt
+client = InferenceClient(provider="hf-inference", api_key=HF_TOKEN)
 
 STYLE_PROMPT = ", biblical times, ancient Israel, first century setting, historical accuracy, modest humble clothing, professional digital comic art, oil painting texture, cinematic lighting, sharp detail, 4k, vertical composition"
-NEGATIVE_PROMPT = "modern objects, soap dispensers, jewelry, earrings, piercings, modern accessories, sunglasses, romantic intimacy, seductive, low cut clothing, electricity, neon, plastic, glass bottles with pumps, computers, phones"
+NEGATIVE_PROMPT = (
+    "modern objects, soap dispensers, jewelry, earrings, piercings, modern accessories, "
+    "sunglasses, romantic intimacy, seductive, low cut clothing, electricity, neon, plastic, "
+    "glass bottles with pumps, computers, phones, extra fingers, distorted faces, blurry, "
+    "modern architecture, tattoos, watches, cars"
+)
 
 def generate_image_hf_direct(prompt, retries=3):
-    """Genera imagen usando SDXL con fuertes guardarraíles negativos."""
-    headers = {"Authorization": f"Bearer {HF_TOKEN}"}
-    payload = {
-        "inputs": prompt,
-        "parameters": {
-            "negative_prompt": (
-                "modern objects, soap dispensers, jewelry, earrings, piercings, modern accessories, "
-                "sunglasses, romantic intimacy, seductive, low cut clothing, electricity, neon, plastic, "
-                "glass bottles with pumps, computers, phones, extra fingers, distorted faces, blurry, "
-                "modern architecture, tattoos, watches, cars"
-            ),
-            "num_inference_steps": 35,
-            "guidance_scale": 8.5
-        },
-        "options": {"wait_for_model": True}
-    }
-    
+    """Genera imagen usando InferenceClient con SDXL y negative_prompt real."""
     for i in range(retries):
         try:
             print(f"  🖼️ Generando imagen (SDXL - Intento {i+1})...")
-            response = requests.post(HF_API_URL, headers=headers, json=payload, timeout=120)
-            
-            if response.status_code == 200:
-                img_bytes = response.content
-                print(f"  ✅ Imagen generada ({len(img_bytes)//1024}KB)")
-                return img_bytes
-            elif response.status_code == 503:
-                # El modelo se está cargando
-                wait_time = 20
-                try: wait_time = response.json().get('estimated_time', 20)
-                except: pass
-                print(f"⏳ El modelo se está cargando, esperando {wait_time}s...")
-                time.sleep(wait_time)
-            else:
-                print(f"  ⚠️ Error {response.status_code}: {response.text[:200]}")
-                time.sleep(15)
+            image = client.text_to_image(
+                prompt,
+                model=MODEL_ID,
+                negative_prompt=NEGATIVE_PROMPT,
+                num_inference_steps=35,
+                guidance_scale=8.5
+            )
+            img_byte_arr = io.BytesIO()
+            image.save(img_byte_arr, format='PNG')
+            img_bytes = img_byte_arr.getvalue()
+            print(f"  ✅ Imagen generada ({len(img_bytes)//1024}KB)")
+            return img_bytes
         except Exception as e:
             print(f"  ⚠️ Intento {i+1} falló: {e}")
             time.sleep(15)
