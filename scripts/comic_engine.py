@@ -1,4 +1,5 @@
 import os
+import sys
 import requests
 import json
 import time
@@ -22,15 +23,16 @@ STYLE_PROMPT = ", professional digital comic art, cinematic lighting, sharp deta
 
 class MusiChrisComicEngine:
     def __init__(self):
-        self.base_dir = Path(__file__).parent.parent
+        self.base_dir = Path(os.getcwd()).absolute()
         self.assets_dir = self.base_dir / "assets/panels"
         self.renders_dir = self.base_dir / "renders"
         self.temp_dir = self.base_dir / "temp"
         self.public_dir = self.base_dir / "public"
-        self.catalog_path = self.base_dir / "data/catalog.json"
         
+        print(f"📂 Directorio Base: {self.base_dir}")
         for d in [self.assets_dir, self.renders_dir, self.temp_dir]:
             d.mkdir(parents=True, exist_ok=True)
+            print(f"✅ Carpeta lista: {d}")
 
     def generate_image_hf(self, prompt, retries=3):
         """Genera imagen con IA y retorna bytes."""
@@ -372,18 +374,31 @@ if __name__ == "__main__":
     description = sys.argv[2]
     audio_url = sys.argv[3]
     
-    engine = MusiChrisComicEngine()
-    print(f"🚀 Iniciando forja local para: {title}")
-    
-    # 1. Generar paneles
-    panel_paths = engine.forge_panels(description)
-    
-    # 2. Renderizar video final
-    output_filename = "final_comic.mp4"
-    story_data = {
-        'teaching': description.split('.')[-1] or description # Usar la última frase como enseñanza
-    }
-    
-    engine.render_motion_comic(panel_paths, title, audio_url, output_filename, story_data)
-    
-    print(f"✨ Forja completada en: renders/{output_filename}")
+    try:
+        engine = MusiChrisComicEngine()
+        print(f"🚀 Iniciando forja local para: {title}")
+        
+        # 1. Generar paneles
+        panel_paths = engine.forge_panels(description)
+        
+        # 2. Renderizar video final
+        output_filename = "final_comic.mp4"
+        story_data = {
+            'teaching': description.split('.')[-1] or description 
+        }
+        
+        final_path = engine.render_motion_comic(panel_paths, title, audio_url, output_filename, story_data)
+        
+        if os.path.exists(final_path):
+            print(f"✨ ¡GLORIA A DIOS! Forja completada en: {final_path}")
+            # Crear archivo de éxito para el workflow
+            with open("FORJA_EXITOSA", "w") as f: f.write("DONE")
+        else:
+            print(f"❌ ERROR: El archivo no se encontró en {final_path}")
+            sys.exit(1)
+            
+    except Exception as e:
+        import traceback
+        print(f"💥 ERROR CRÍTICO EN EL MOTOR:")
+        traceback.print_exc()
+        sys.exit(1)
