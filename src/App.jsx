@@ -36,7 +36,7 @@ function App() {
     (song.album && song.album.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const triggerForgeAction = async () => {
+  const handleForge = async () => {
     if (!GH_TOKEN) {
       const token = prompt('Introduce tu GitHub PAT (Master Access):');
       if (token) {
