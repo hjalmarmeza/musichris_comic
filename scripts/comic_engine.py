@@ -139,6 +139,20 @@ class MusiChrisComicEngine:
         subprocess.run(cmd, check=True)
         return str(output_video)
 
+    def get_random_bg_music(self):
+        """Selecciona una pista aleatoria del catálogo para el fondo del cómic manual."""
+        catalog_path = self.base_dir / "data/catalog.json"
+        try:
+            with open(catalog_path, 'r', encoding='utf-8') as f:
+                catalog = json.load(f)
+            return random.choice(catalog)
+        except Exception as e:
+            print(f"⚠️ Error cargando catálogo para música aleatoria: {e}")
+            # Fallback seguro
+            return {
+                "title": "Adoración Celestial",
+                "audio_url": "https://res.cloudinary.com/dveqs8f3n/video/upload/v1777587823/Nube_Santa_og9kiw.mp3"
+            }
 
     def _generate_title_video_unused(self, title):
         """[LEGACY - no usar en cloud] Requiere video_pantalla_inicio.mp4 local."""
