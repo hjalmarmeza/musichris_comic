@@ -25,9 +25,11 @@ STYLE_PROMPT = (
     "historically accurate clothing, 9:16 vertical composition"
 )
 NEGATIVE_PROMPT = (
+    "crown, king crown, diadem, tiara, royal headpiece, "
     "modern objects, soap dispensers, jewelry on men, earrings on men, modern accessories, "
     "sunglasses, romantic kiss, seductive pose, revealing clothing, electricity, neon, plastic, "
-    "glass pump bottles, computers, phones, distorted faces, blurry, "
+    "glass bottle, glass flask, glass jar, decanter, glass pump bottles, "
+    "computers, phones, distorted faces, blurry, "
     "modern architecture, tattoos, watches, cars, oil painting, photorealistic"
 )
 
@@ -239,8 +241,7 @@ class MusiChrisComicEngine:
         overlay = Image.new('RGBA', img.size, (0,0,0,0))
         draw = ImageDraw.Draw(overlay)
         
-        font_path = "/System/Library/Fonts/Helvetica.ttc"
-        font = get_font(72)  # Usa la función multiplataforma
+        font = get_font(72)  # Fuente DejaVu instalada vía apt-get
 
         # Envolver texto - Ajustado para fuente más grande
         words = text.split(); lines = []; curr = ""
@@ -298,8 +299,13 @@ class MusiChrisComicEngine:
             if "fariseo" in text or "Simón" in text:
                 art_style += ". Pharisee: ornate robe, beard, serious expression"
 
+            # Limitar text del panel a máx 12 palabras para evitar truncamientos
+            panel_text = ' '.join(text.split()[:12])
+            if len(text.split()) > 12:
+                panel_text += '...'
+            
             prompt = f"{art_style}. Clear scene: {text}"
-            panels.append({"prompt": prompt, "text": text, "panel_num": i+2})
+            panels.append({"prompt": prompt, "text": panel_text, "panel_num": i+2})
         return panels
 
     def forge_panels(self, story_panels):
@@ -335,32 +341,50 @@ class MusiChrisComicEngine:
         return panel_vids
 
     def generate_lesson_video(self, teaching):
-        """Genera la pantalla de enseñanza usando master_teaching_bg.mp4."""
+        """Genera la pantalla de enseñanza usando master_teaching_bg.mp4 con narrative bar legible."""
         output_video = self.temp_dir / "lesson_screen.mp4"
         input_video = self.public_dir / "master_teaching_bg.mp4"
         
-        # Primero generamos el overlay de texto
+        # Overlay con caja narrativa igual que los paneles
         overlay = Image.new('RGBA', (1080, 1920), (0,0,0,0))
         draw = ImageDraw.Draw(overlay)
-        font_path = "/System/Library/Fonts/Helvetica.ttc"
-        try: f_main = ImageFont.truetype(font_path, 70)
-        except: f_main = ImageFont.load_default()
+        f_main = get_font(70)  # Fuente DejaVu confirmada
 
-        def draw_wrapped_centered(y, text, font, color, max_w=22):
-            words = text.split(); lines = []; curr = ""
-            for w in words:
-                if len(curr + w) < max_w: curr += w + " "
-                else: lines.append(curr.strip()); curr = w + " "
-            lines.append(curr.strip())
-            cy = y
-            for l in lines:
-                bbox = draw.textbbox((0,0), l, font=font)
-                w = bbox[2] - bbox[0]
-                draw.text(((1080-w)/2 + 4, cy + 4), l, font=font, fill=(0,0,0,255))
-                draw.text(((1080-w)/2, cy), l, font=font, fill=color)
-                cy += 95
-
-        draw_wrapped_centered(800, teaching, f_main, (255, 215, 0))
+        # Partir el texto en líneas de máx 18 palabras
+        words = teaching.split()
+        lines = []
+        curr = ""
+        for w in words:
+            if len(curr + w) < 22: curr += w + " "
+            else: lines.append(curr.strip()); curr = w + " "
+        lines.append(curr.strip())
+        lines = [l for l in lines if l]  # Limpiar líneas vacías
+        
+        line_h = 90
+        box_w = 0
+        for l in lines:
+            bbox = draw.textbbox((0, 0), l, font=f_main)
+            box_w = max(box_w, bbox[2] - bbox[0])
+        box_w = min(box_w + 80, 1000)  # Máx 1000px de ancho
+        box_h = len(lines) * line_h + 60
+        
+        # Centrar la caja verticalmente (zona inferior 60%)
+        x = (1080 - box_w) / 2
+        y = 1920 - box_h - 300
+        
+        # Caja con borde dorado — igual que narrative bar de paneles
+        draw.rectangle([x, y, x + box_w, y + box_h],
+                       fill=(0, 0, 0, 200), outline=(255, 215, 0), width=6)
+        
+        curr_y = y + 30
+        for line in lines:
+            bbox = draw.textbbox((0, 0), line, font=f_main)
+            lw = bbox[2] - bbox[0]
+            lx = x + (box_w - lw) / 2
+            draw.text((lx + 3, curr_y + 3), line, font=f_main, fill=(0, 0, 0, 255))  # Sombra
+            draw.text((lx, curr_y), line, font=f_main, fill=(255, 215, 0))  # Oro
+            curr_y += line_h
+        
         overlay_path = self.temp_dir / "lesson_overlay.png"
         overlay.save(overlay_path)
         
@@ -374,18 +398,17 @@ class MusiChrisComicEngine:
                 "-t", "7", "-c:v", "libx264", "-pix_fmt", "yuv420p", str(output_video)
             ]
         else:
-            print("⚠️ Video teaching no encontrado, usando fallback de imagen.")
-            bg_image = self.public_dir / "master_teaching_bg.png"
+            print("⚠️ Video teaching no encontrado, usando fondo negro.")
             cmd = [
-                "ffmpeg", "-y", "-loop", "1", "-t", "7", "-i", str(bg_image),
+                "ffmpeg", "-y", "-f", "lavfi", "-i", "color=c=#0a0a1a:s=1080x1920:r=30:d=7",
                 "-i", str(overlay_path),
                 "-filter_complex", 
-                "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1[bg]; "
-                "[bg][1:v]overlay=enable='between(t,0,7)',fade=t=in:st=0:d=0.5,fade=t=out:st=6.5:d=0.5",
-                "-c:v", "libx264", "-pix_fmt", "yuv420p", str(output_video)
+                "[0:v][1:v]overlay=enable='between(t,0,7)',fade=t=in:st=0:d=0.5,fade=t=out:st=6.5:d=0.5",
+                "-t", "7", "-c:v", "libx264", "-pix_fmt", "yuv420p", str(output_video)
             ]
             
         subprocess.run(cmd, check=True)
+        print(f"✅ Pantalla de enseñanza generada: {output_video}")
         return output_video
 
     def render_motion_comic(self, panel_paths, title, audio_url, output_filename, story_data):
