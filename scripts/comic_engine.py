@@ -58,24 +58,38 @@ class MusiChrisComicEngine:
         return generate_image_hf_direct(prompt + STYLE_PROMPT, retries)
 
     def generate_title_video(self, title):
-        """Genera la pantalla inicial programáticamente (sin depender de archivos locales)."""
+        """Genera la pantalla inicial usando video_pantalla_inicio.mp4."""
         output_video = self.assets_dir / "intro_rendered.mp4"
-        print(f"🎬 Generando intro para: {title}")
-        # Generar intro 100% programático con ffmpeg
+        input_video = self.public_dir / "video_pantalla_inicio.mp4"
+        
+        print(f"🎬 Generando intro premium para: {title}")
         safe_title = title.replace("'", "'\\''").replace('"', '')
-        subprocess.run([
-            "ffmpeg", "-y",
-            "-f", "lavfi", "-i", "color=c=#1a0a00:s=1080x1920:r=30:d=7",
-            "-vf", (
-                f"drawtext=text='{safe_title}':fontcolor=gold:fontsize=65:"
-                "x=(w-text_w)/2:y=(h/2)-80:box=1:boxcolor=black@0.6:boxborderw=15:line_spacing=10,"
-                "drawtext=text='@MusiChris Studio':fontcolor=white:fontsize=42:"
-                "x=(w-text_w)/2:y=(h/2)+60:box=1:boxcolor=black@0.5:boxborderw=8"
-            ),
-            "-c:v", "libx264", "-pix_fmt", "yuv420p",
-            str(output_video)
-        ], check=True)
-        print(f"✅ Intro generado: {output_video}")
+        
+        if input_video.exists():
+            cmd = [
+                "ffmpeg", "-y", "-i", str(input_video),
+                "-vf", (
+                    f"drawtext=text='{safe_title}':fontcolor=gold:fontsize=80:"
+                    "x=(w-text_w)/2:y=(h/2)-100:box=1:boxcolor=black@0.4:boxborderw=15:line_spacing=15,"
+                    "drawtext=text='@MusiChris Studio':fontcolor=white:fontsize=45:"
+                    "x=(w-text_w)/2:y=(h/2)+80:box=1:boxcolor=black@0.3:boxborderw=10"
+                ),
+                "-t", "6", "-c:v", "libx264", "-pix_fmt", "yuv420p", str(output_video)
+            ]
+        else:
+            print("⚠️ Video intro no encontrado, usando fallback de color.")
+            cmd = [
+                "ffmpeg", "-y", "-f", "lavfi", "-i", "color=c=#1a0a00:s=1080x1920:r=30:d=6",
+                "-vf", (
+                    f"drawtext=text='{safe_title}':fontcolor=gold:fontsize=80:"
+                    "x=(w-text_w)/2:y=(h/2)-100:box=1:boxcolor=black@0.6:boxborderw=15,"
+                    "drawtext=text='@MusiChris Studio':fontcolor=white:fontsize=45:"
+                    "x=(w-text_w)/2:y=(h/2)+80:box=1:boxcolor=black@0.5:boxborderw=10"
+                ),
+                "-c:v", "libx264", "-pix_fmt", "yuv420p", str(output_video)
+            ]
+            
+        subprocess.run(cmd, check=True)
         return str(output_video)
 
     def _generate_title_video_unused(self, title):
@@ -226,14 +240,15 @@ class MusiChrisComicEngine:
         return output.getvalue()
 
     def auto_split_story(self, description):
-        """Divide una descripción larga en 8 fragmentos con guardarraíles bíblicos."""
+        """Divide una descripción larga en 7 fragmentos (Panel 2 al 8)."""
         sentences = re.split(r'(?<=[.!?])\s+', description)
         panels = []
-        for i in range(8):
+        # El usuario pidió del 2 al 8 (7 paneles en total)
+        for i in range(7):
             idx = i % len(sentences)
             text = sentences[idx]
             
-            # Guardarraíles Bíblicos según el texto
+            # Guardarraíles Bíblicos
             guardrails = "biblical times, humble setting, no modern objects."
             if "Jesús" in text or "Jesus" in text:
                 guardrails += " Jesus Christ should look like a dignified first-century Jewish man with a beard and humble robe, compassionate expression, NO jewelry, NO modern hair styles."
@@ -242,8 +257,8 @@ class MusiChrisComicEngine:
             if "alabastro" in text or "jar" in text:
                 guardrails += " The jar should be a simple ancient clay or stone vessel, NO glass pump bottles."
 
-            prompt = f"Comic panel: {text}. {guardrails} Cinematic lighting, high detail, masterpiece."
-            panels.append({"prompt": prompt, "text": text})
+            prompt = f"Comic panel {i+2}: {text}. {guardrails} Cinematic lighting, high detail."
+            panels.append({"prompt": prompt, "text": text, "panel_num": i+2})
         return panels
 
     def forge_panels(self, story_panels):
@@ -279,18 +294,18 @@ class MusiChrisComicEngine:
         return panel_vids
 
     def generate_lesson_video(self, teaching):
-        """Genera la pantalla de enseñanza ministerial final (Sin encabezados genéricos)."""
+        """Genera la pantalla de enseñanza usando master_teaching_bg.mp4."""
         output_video = self.temp_dir / "lesson_screen.mp4"
+        input_video = self.public_dir / "master_teaching_bg.mp4"
+        
+        # Primero generamos el overlay de texto
         overlay = Image.new('RGBA', (1080, 1920), (0,0,0,0))
         draw = ImageDraw.Draw(overlay)
-        
         font_path = "/System/Library/Fonts/Helvetica.ttc"
-        try:
-            f_main = ImageFont.truetype(font_path, 65)
-            f_brand = ImageFont.truetype(font_path, 45)
-        except: f_main = f_brand = ImageFont.load_default()
+        try: f_main = ImageFont.truetype(font_path, 70)
+        except: f_main = ImageFont.load_default()
 
-        def draw_wrapped_centered(y, text, font, color, max_w=25):
+        def draw_wrapped_centered(y, text, font, color, max_w=22):
             words = text.split(); lines = []; curr = ""
             for w in words:
                 if len(curr + w) < max_w: curr += w + " "
@@ -300,31 +315,36 @@ class MusiChrisComicEngine:
             for l in lines:
                 bbox = draw.textbbox((0,0), l, font=font)
                 w = bbox[2] - bbox[0]
-                # Sombra de alto contraste (Offset para profundidad)
                 draw.text(((1080-w)/2 + 4, cy + 4), l, font=font, fill=(0,0,0,255))
                 draw.text(((1080-w)/2, cy), l, font=font, fill=color)
-                cy += 85
+                cy += 95
 
-        # Usar Oro Divine para máxima legibilidad y elegancia
-        draw_wrapped_centered(850, teaching, f_main, (255, 215, 0))
-        
-        # Branding discreto
-        bbox = draw.textbbox((0,0), "MUSICHRIS_STUDIO", font=f_brand)
-        draw.text(((1080-(bbox[2]-bbox[0]))/2, 1600), "MUSICHRIS_STUDIO", font=f_brand, fill=(255, 215, 0, 180))
-        
+        draw_wrapped_centered(800, teaching, f_main, (255, 215, 0))
         overlay_path = self.temp_dir / "lesson_overlay.png"
         overlay.save(overlay_path)
         
-        bg_image = self.public_dir / "master_teaching_bg.png"
-        
-        subprocess.run([
-            "ffmpeg", "-y", "-loop", "1", "-t", "6", "-i", str(bg_image),
-            "-i", str(overlay_path),
-            "-filter_complex", 
-            "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1[bg]; "
-            "[bg][1:v]overlay=enable='between(t,0,6)',fade=t=in:st=0:d=0.5,fade=t=out:st=5.5:d=0.5",
-            "-c:v", "libx264", "-pix_fmt", "yuv420p", str(output_video)
-        ], check=True)
+        if input_video.exists():
+            cmd = [
+                "ffmpeg", "-y", "-i", str(input_video),
+                "-i", str(overlay_path),
+                "-filter_complex", 
+                "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1[bg]; "
+                "[bg][1:v]overlay=enable='between(t,0,7)',fade=t=in:st=0:d=0.5,fade=t=out:st=6.5:d=0.5",
+                "-t", "7", "-c:v", "libx264", "-pix_fmt", "yuv420p", str(output_video)
+            ]
+        else:
+            print("⚠️ Video teaching no encontrado, usando fallback de imagen.")
+            bg_image = self.public_dir / "master_teaching_bg.png"
+            cmd = [
+                "ffmpeg", "-y", "-loop", "1", "-t", "7", "-i", str(bg_image),
+                "-i", str(overlay_path),
+                "-filter_complex", 
+                "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1[bg]; "
+                "[bg][1:v]overlay=enable='between(t,0,7)',fade=t=in:st=0:d=0.5,fade=t=out:st=6.5:d=0.5",
+                "-c:v", "libx264", "-pix_fmt", "yuv420p", str(output_video)
+            ]
+            
+        subprocess.run(cmd, check=True)
         return output_video
 
     def render_motion_comic(self, panel_paths, title, audio_url, output_filename, story_data):
@@ -335,31 +355,37 @@ class MusiChrisComicEngine:
         intro_path = self.generate_title_video(title)
         teaching_vid = self.generate_lesson_video(story_data.get('teaching', ''))
         
-        # Outro: Priorizar logo animado local, si no, generar uno programático
-        outro_source = self.base_dir / "assets/video/outro.mp4"
+        # Outro: Logo Animado + Textos Solicitados
+        outro_source = self.public_dir / "outro.mp4"
+        if not outro_source.exists(): # Intentar en assets/video si no está en public
+            outro_source = self.base_dir / "assets/video/outro.mp4"
+            
         outro_final = self.temp_dir / "outro_branded.mp4"
         
         if outro_source.exists():
-            print(f"🎬 Usando LOGO ANIMADO detectado: {outro_source.name}")
-            # Normalizar el logo animado para asegurar compatibilidad de concat
+            print(f"🎬 Preparando cierre premium con: {outro_source.name}")
             subprocess.run([
                 "ffmpeg", "-y", "-i", str(outro_source),
-                "-vf", "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30",
+                "-vf", (
+                    "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30,"
+                    "drawtext=text='@MusiChris Studio':fontcolor=gold:fontsize=75:"
+                    "x=(w-text_w)/2:y=(h/2)+250:box=1:boxcolor=black@0.4:boxborderw=10,"
+                    "drawtext=text='Caminemos Juntos En fe':fontcolor=white:fontsize=45:"
+                    "x=(w-text_w)/2:y=(h/2)+380:box=1:boxcolor=black@0.4:boxborderw=8"
+                ),
                 "-c:v", "libx264", "-pix_fmt", "yuv420p", "-an", str(outro_final)
             ], check=True)
         else:
-            print("🎬 Generando outro ministerial programático (Logo no encontrado)...")
+            print("🎬 Generando outro de emergencia (Logo no encontrado)...")
             subprocess.run([
-                "ffmpeg", "-y",
-                "-f", "lavfi", "-i", "color=c=black:s=1080x1920:r=30:d=5",
+                "ffmpeg", "-y", "-f", "lavfi", "-i", "color=c=black:s=1080x1920:r=30:d=6",
                 "-vf", (
-                    "drawtext=text='@MusiChris Studio':fontcolor=gold:fontsize=70:"
-                    "x=(w-text_w)/2:y=(h/2)-60:box=1:boxcolor=black@0.5:boxborderw=10,"
-                    "drawtext=text='Ministerio Musical':fontcolor=white:fontsize=45:"
-                    "x=(w-text_w)/2:y=(h/2)+40:box=1:boxcolor=black@0.5:boxborderw=8"
+                    "drawtext=text='@MusiChris Studio':fontcolor=gold:fontsize=75:"
+                    "x=(w-text_w)/2:y=(h/2)+250,"
+                    "drawtext=text='Caminemos Juntos En fe':fontcolor=white:fontsize=45:"
+                    "x=(w-text_w)/2:y=(h/2)+380"
                 ),
-                "-c:v", "libx264", "-pix_fmt", "yuv420p",
-                str(outro_final)
+                "-c:v", "libx264", "-pix_fmt", "yuv420p", str(outro_final)
             ], check=True)
         
         print(f"✅ Outro listo en: {outro_final}")
