@@ -262,15 +262,15 @@ class MusiChrisComicEngine:
         overlay = Image.new('RGBA', img.size, (0,0,0,0))
         draw = ImageDraw.Draw(overlay)
         
-        # Escalado dinámico de fuente: Mínimo 60px para legibilidad
-        current_font_size = 72
-        if len(text) > 120: current_font_size = 65
-        if len(text) > 180: current_font_size = 60
+        # Escalado dinámico de fuente: Más pequeño para no tapar la imagen
+        current_font_size = 65
+        if len(text) > 120: current_font_size = 58
+        if len(text) > 180: current_font_size = 52
         
         font = get_font(current_font_size)
         
-        # Envoltura de texto inteligente
-        max_chars_per_line = 22 if current_font_size < 70 else 18
+        # Envoltura de texto más ancha para reducir altura de la caja
+        max_chars_per_line = 28 if current_font_size < 60 else 24
         words = text.split(); lines = []; curr = ""
         for w in words:
             if len(curr + w) < max_chars_per_line: curr += w + " "
@@ -289,12 +289,12 @@ class MusiChrisComicEngine:
         box_w = min(box_w + 80, 1000)
         box_h = len(lines) * line_h + 60
         
-        # Posición: Siempre en la parte inferior, subiendo si la caja es alta
+        # Posición: Más abajo para no tapar el centro de la imagen
         x = (1080 - box_w) / 2
-        y = 1920 - box_h - 220 
+        y = 1920 - box_h - 180 
         
-        # Dibujar caja narrativa dorada
-        draw.rectangle([x, y, x + box_w, y + box_h], fill=(0,0,0,190), outline=(255, 215, 0), width=5)
+        # Dibujar caja narrativa más transparente y elegante
+        draw.rectangle([x, y, x + box_w, y + box_h], fill=(0,0,0,150), outline=(255, 215, 0), width=4)
         
         curr_y = y + 30
         for line in lines:
@@ -377,13 +377,13 @@ class MusiChrisComicEngine:
             # Zoompan forzado a 30fps para evitar errores de concatenación en Linux
             zoom_filter = (
                 "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30,"
-                "zoompan=z='min(zoom+0.001,1.3)':d=165:s=1080x1920:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'"
+                "zoompan=z='min(zoom+0.0008,1.2)':d=225:s=1080x1920:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'"
             )
             
             subprocess.run([
                 "ffmpeg", "-y", "-loop", "1", "-i", str(panel_img),
                 "-vf", f"{zoom_filter},fade=t=in:st=0:d=0.5,format=yuv420p",
-                "-t", "5.5", "-c:v", "libx264", "-preset", "fast", str(vid_path)
+                "-t", "7.5", "-c:v", "libx264", "-preset", "fast", str(vid_path)
             ], check=True)
             panel_vids.append(str(vid_path))
         return panel_vids
