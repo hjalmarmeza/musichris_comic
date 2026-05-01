@@ -26,64 +26,77 @@ jobs:
           const rawTitle = `${{ github.event.client_payload.title }}`;
           const rawIdea = `${{ github.event.client_payload.description }}`;
 
-          // Limpiador de Metadatos: Eliminar BPM, tempo, pads y especificaciones técnicas que confunden a la IA
-          const cleanIdea = rawIdea.replace(/BPM|tempo|Pads|Guitarra|eco|vibra|gritos|estilo|bpm/gi, "")
-                                   .replace(/\d+/g, " ")
-                                   .replace(/\s+/g, " ")
-                                   .trim();
+          const cleanIdea = rawIdea.replace(/BPM|tempo|Pads|Guitarra|eco|vibra|gritos|estilo|bpm/gi, "").replace(/\d+/g, " ").replace(/\s+/g, " ").trim();
 
-          const payload = {
-            model: 'llama3.1-8b',
-            messages: [
-              {
-                role: 'system', 
-                content: 'Eres el Guionista Maestro de @MusiChris Studio. REGLAS SAGRADAS: 1. Fidelidad absoluta al versículo. 2. NO alucines. 3. Cada panel "text" máx 12 palabras. 4. Responde ÚNICAMENTE con JSON. SCHEMA: {"creative_title": "...", "story": [{"prompt": "...", "text": "..."}, ...], "lesson": "...", "reference": "..."}. Story debe ser una lista de 8 objetos con llaves exactas "prompt" y "text".'
-              },
-              {
-                role: 'user', 
-                content: `Título Base/Canción: ${rawTitle}. ADN Bíblico: ${cleanIdea}. Genera el título creativo, la historia y la enseñanza de impacto.`
-              }
-            ]
-          };
-
-          const options = {
-            hostname: 'api.cerebras.ai',
-            path: '/v1/chat/completions',
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer ' + process.env.CEREBRAS_API_KEY
-            }
-          };
-
-          const req = https.request(options, (res) => {
-            let data = '';
-            res.on('data', (chunk) => data += chunk);
-            res.on('end', () => {
-              if (res.statusCode === 200) {
-                const response = JSON.parse(data);
-                let content = response.choices[0].message.content;
-                // Imán de JSON: Extraer lo que está entre la primera { y la última }
-                const jsonMatch = content.match(/\{[\s\S]*\}/);
-                if (jsonMatch) {
-                  let cleanContent = jsonMatch[0];
-                  // Limpiar solo caracteres de control peligrosos
-                  cleanContent = cleanContent.replace(/[\u0000-\u0009\u000B-\u001F\u007F-\u009F]/g, "");
-                  fs.writeFileSync('story_expanded.json', cleanContent);
-                  console.log('✅ Historia y enseñanza de impacto extraídas con éxito.');
-                } else {
-                  throw new Error('No se encontró un JSON válido en la respuesta de la IA.');
+          async function getStory(retryCount = 0) {
+            const payload = {
+              model: 'llama3.1-8b',
+              messages: [
+                {
+                  role: 'system', 
+                  content: 'Eres el Guionista Maestro de @MusiChris Studio. REGLAS: 1. Fidelidad absoluta al versículo. 2. Cada panel debe tener "prompt" (en inglés, detallado) y "text" (en español, máx 12 palabras). 3. Responde ÚNICAMENTE con JSON. SCHEMA: {"creative_title": "...", "story": [{"prompt": "...", "text": "..."}, ...], "lesson": "...", "reference": "..."}. Deben ser exactamente 8 paneles.'
+                },
+                {
+                  role: 'user', 
+                  content: `Título: ${rawTitle}. Contexto: ${cleanIdea}. Genera el guion completo.`
                 }
-              } else {
-                console.error('❌ Error Cerebras:', data);
-                process.exit(1);
-              }
+              ]
+            };
+
+            return new Promise((resolve, reject) => {
+              const req = https.request({
+                hostname: 'api.cerebras.ai',
+                path: '/v1/chat/completions',
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': 'Bearer ' + process.env.CEREBRAS_API_KEY
+                }
+              }, (res) => {
+                let data = '';
+                res.on('data', (chunk) => data += chunk);
+                res.on('end', () => {
+                  if (res.statusCode === 200) {
+                    try {
+                      const response = JSON.parse(data);
+                      const content = response.choices[0].message.content;
+                      const jsonMatch = content.match(/\{[\s\S]*\}/);
+                      if (!jsonMatch) throw new Error('No JSON found');
+                      
+                      const storyData = JSON.parse(jsonMatch[0].replace(/[\u0000-\u0009\u000B-\u001F\u007F-\u009F]/g, ""));
+                      
+                      // Validación Crítica
+                      const panels = storyData.story || [];
+                      if (panels.length < 5) throw new Error('Faltan paneles');
+                      
+                      fs.writeFileSync('story_expanded.json', JSON.stringify(storyData));
+                      console.log('✅ Historia validada y guardada.');
+                      resolve();
+                    } catch (e) {
+                      if (retryCount < 2) {
+                        console.log(`⚠️ Fallo de validación, reintentando (${retryCount + 1}/2)...`);
+                        resolve(getStory(retryCount + 1));
+                      } else {
+                        reject(new Error('IA persistente en error de formato: ' + e.message));
+                      }
+                    }
+                  } else {
+                    reject(new Error('Error Cerebras: ' + data));
+                  }
+                });
+              });
+              req.on('error', reject);
+              req.write(JSON.stringify(payload));
+              req.end();
             });
+          }
+
+          getStory().catch(err => {
+            console.error('❌ FATAL:', err.message);
+            process.exit(1);
           });
-          req.on('error', (e) => { console.error(e); process.exit(1); });
-          req.write(JSON.stringify(payload));
-          req.end();
           EOF
+
 
       - name: 🐍 Setup Python
         uses: actions/setup-python@v4

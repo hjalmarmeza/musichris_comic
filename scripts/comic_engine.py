@@ -357,8 +357,12 @@ class MusiChrisComicEngine:
             print(f"🎨 Forjando Panel {i+1}...")
             
             # Recuperación robusta de llaves (soporte para prompt/image_prompt y text/narrative)
-            p_prompt = p.get('prompt') or p.get('image_prompt') or p.get('visual') or "Cinematic biblical scene"
-            p_text = p.get('text') or p.get('narrative') or p.get('description') or "..."
+            p_prompt = p.get('prompt') or p.get('image_prompt') or p.get('visual')
+            p_text = p.get('text') or p.get('narrative') or p.get('description')
+            
+            if not p_prompt or not p_text:
+                print(f"❌ Error: Panel {i+1} incompleto (Prompt: {bool(p_prompt)}, Text: {bool(p_text)})")
+                raise ValueError(f"El panel {i+1} no tiene datos suficientes para una forja premium.")
             
             img_data = self.generate_image_hf(p_prompt)
             if not img_data: continue
