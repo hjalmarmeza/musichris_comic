@@ -186,15 +186,24 @@ function App() {
                     />
                   </div>
                   <div className="input-field">
-                    <label className="label-comic">Idea Central</label>
+                    <label className="label-comic">Idea Central o Enseñanza</label>
                     <textarea 
-                      rows="3" 
-                      placeholder="Describe la enseñanza o historia..."
+                      rows="4" 
+                      placeholder="Describe la enseñanza o historia bíblica que quieres convertir en cómic..."
                       value={storyIdea}
                       onChange={(e) => setStoryIdea(e.target.value)}
                       className="input-comic"
                     />
                   </div>
+                  
+                  <button 
+                    className="forge-button-glow"
+                    style={{ marginTop: '20px' }}
+                    onClick={handleForge}
+                    disabled={isForging || !storyTitle || !storyIdea}
+                  >
+                    {status || '🚀 FORJAR HISTORIA MANUAL'}
+                  </button>
                 </div>
               </div>
             ) : (
@@ -260,7 +269,7 @@ function App() {
       </main>
 
       <div className="reset-container">
-        <div className="build-info">BUILD v1.0.13</div>
+        <div className="build-info">BUILD v1.1.0</div>
         <span onClick={() => window.location.reload(true)} className="refresh-link">🔄 FORZAR ACTUALIZACIÓN</span>
         <br/><br/>
         <span onClick={resetToken} className="reset-link">⚙️ RECONFIGURAR ACCESO</span>
