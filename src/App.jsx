@@ -36,6 +36,13 @@ function App() {
     (song.album && song.album.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
+  const [logs, setLogs] = useState([]);
+
+  const addLog = (msg) => {
+    setLogs(prev => [...prev.slice(-3), `> ${msg}`]);
+    setStatus(msg);
+  };
+
   const handleForge = async () => {
     if (!GH_TOKEN) {
       const token = prompt('Introduce tu GitHub PAT (Master Access):');
@@ -46,19 +53,24 @@ function App() {
       return;
     }
 
+    setIsForging(true);
+    setLogs([]);
+    addLog('Iniciando Motor...');
+
     let payload = {};
     if (mode === 'manual') {
       if (!storyTitle || !storyIdea) {
-        alert('Por favor, llena ambos campos.');
+        addLog('Faltan datos manuales');
+        setIsForging(false);
         return;
       }
       payload = { title: storyTitle, description: storyIdea };
     } else {
       if (!selectedSong) {
-        alert('Por favor, selecciona una canción del catálogo.');
+        addLog('Falta seleccionar canción');
+        setIsForging(false);
         return;
       }
-      // Song to Story Mode: We pass the song details to the forge
       payload = { 
         title: selectedSong.title, 
         description: `Basado en la canción "${selectedSong.title}". Versículo: ${selectedSong.context?.verse || 'N/A'}. Enfoque: ${selectedSong.context?.focus || 'N/A'}`,
@@ -67,18 +79,18 @@ function App() {
       };
     }
 
-    setIsForging(true);
-    setStatus('🧠 SINCRONIZANDO ADN MINISTERIAL...');
+    addLog('Payload generado');
 
     // Registrar en la memoria de forja si estamos en modo canción
-    if (activeTab === 'song' && selectedSong) {
+    if (mode === 'song' && selectedSong) {
       const newForged = [...forgedSongs, selectedSong.id || selectedSong.title];
       setForgedSongs(newForged);
       localStorage.setItem('forged_songs_history', JSON.stringify(newForged));
+      addLog('Historial actualizado');
     }
     
     try {
-      // Timeout de 15 segundos para la conexión
+      addLog('Llamando a GitHub...');
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000);
 
@@ -97,17 +109,18 @@ function App() {
       });
 
       clearTimeout(timeoutId);
+      addLog(`Respuesta GH: ${response.status}`);
 
       if (response.ok) {
-        setStatus('✨ ¡LA FORJA HA COMENZADO!');
+        addLog('✨ ¡ORDEN RECIBIDA POR GITHUB!');
         setTimeout(() => {
           setIsForging(false);
           setSelectedSong(null);
           setShowSplash(true);
-        }, 4000);
+        }, 3500);
       } else {
         const errorData = await response.json().catch(() => ({}));
-        setStatus(`❌ ERROR ${response.status}: ${errorData.message || 'RECHAZADO'}`);
+        addLog(`❌ ERROR: ${errorData.message || 'RECHAZADO'}`);
         if (response.status === 401 || response.status === 403) {
           localStorage.removeItem('GH_TOKEN');
           setTimeout(() => window.location.reload(), 4000);
@@ -117,8 +130,8 @@ function App() {
       }
     } catch (err) {
       console.error('Error:', err);
-      const msg = err.name === 'AbortError' ? '⌛ TIEMPO EXCEDIDO (REVISA EL TOKEN/RED)' : '❌ ERROR DE CONEXIÓN';
-      setStatus(msg);
+      const msg = err.name === 'AbortError' ? '⌛ TIEMPO EXCEDIDO' : '❌ FALLO DE RED';
+      addLog(msg);
       setTimeout(() => setIsForging(false), 6000);
     }
   };
@@ -237,13 +250,17 @@ function App() {
         ) : (
           <div className="forge-status-overlay fade-in">
             <div className="ai-loader"></div>
-            <p className="status-text">{status}</p>
+            <div className="status-logs">
+              {logs.map((log, i) => (
+                <p key={i} className="log-line">{log}</p>
+              ))}
+            </div>
           </div>
         )}
       </main>
 
       <div className="reset-container">
-        <div className="build-info">BUILD v1.0.12</div>
+        <div className="build-info">BUILD v1.0.13</div>
         <span onClick={() => window.location.reload(true)} className="refresh-link">🔄 FORZAR ACTUALIZACIÓN</span>
         <br/><br/>
         <span onClick={resetToken} className="reset-link">⚙️ RECONFIGURAR ACCESO</span>
