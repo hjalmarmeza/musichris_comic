@@ -169,11 +169,11 @@ function App() {
         <button className={mode === 'song' ? 'mode-btn active' : 'mode-btn'} onClick={() => setMode('song')}>VERSE MUSICAL</button>
       </div>
 
-      <main className="glass-card">
+      <main className="glass-card" style={{ display: 'flex', flexDirection: 'column', minHeight: 'calc(100vh - 150px)' }}>
         {!isForging ? (
           <>
             {mode === 'verse' ? (
-              <div className="verse-form fade-in">
+              <div className="verse-form fade-in" style={{ flexGrow: 1 }}>
                 <div className="input-group">
                   <label>Versículo / Referencia</label>
                   <input 
@@ -184,13 +184,14 @@ function App() {
                     className="input-comic"
                   />
                 </div>
-                <div className="input-group">
+                <div className="input-group" style={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
                   <label>Reflexión Profunda</label>
                   <textarea 
                     placeholder="Describe la escena o el mensaje espiritual..."
                     value={storyIdea}
                     onChange={(e) => setStoryIdea(e.target.value)}
                     className="input-comic"
+                    style={{ flexGrow: 1, minHeight: '150px' }}
                   />
                 </div>
                 
@@ -207,7 +208,7 @@ function App() {
                 <div className="search-bar">
                   <input 
                     type="text" 
-                    placeholder="Buscar canción o álbum..." 
+                    placeholder="Buscar en el catálogo..." 
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="input-comic-small"
@@ -252,7 +253,7 @@ function App() {
             )}
           </>
         ) : (
-          <div className="forge-status-overlay fade-in">
+          <div className="status-container fade-in" style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             <div className="ai-loader"></div>
             <div className="status-logs">
               {logs.map((log, i) => (
@@ -261,15 +262,16 @@ function App() {
             </div>
           </div>
         )}
-      </main>
 
-      <footer className="reset-container">
-        <div className="build-info">BUILD v1.2.0 PREMIUM</div>
-        <span onClick={() => window.location.reload(true)} className="refresh-link">🔄 FORZAR ACTUALIZACIÓN</span>
-        <div className="footer-links">
-          <span onClick={resetToken} className="reset-link">⚙️ RECONFIGURAR ACCESO</span>
-        </div>
-      </footer>
+        {/* Footer integrado dentro del card para aprovechar espacio */}
+        <footer className="reset-container" style={{ marginTop: 'auto', paddingTop: '15px' }}>
+          <div className="build-info">BUILD v1.2.0 PREMIUM</div>
+          <span onClick={() => window.location.reload(true)} className="refresh-link">🔄 FORZAR ACTUALIZACIÓN</span>
+          <div className="footer-links">
+            <span onClick={resetToken} className="reset-link">⚙️ RECONFIGURAR ACCESO</span>
+          </div>
+        </footer>
+      </main>
     </div>
   );
 }
