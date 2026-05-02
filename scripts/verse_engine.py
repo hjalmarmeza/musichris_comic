@@ -252,7 +252,7 @@ class MusiChrisVerseEngine:
     def forge_panels(self, story_data, character_bible="", story_context=""):
         """Forja los paneles usando el enjambre de IAs con consistencia y contexto."""
         print(f"🎨 Forjando {len(story_data)} paneles de alta calidad...")
-        panel_paths = []
+        panel_vids = []
         
         for i, item in enumerate(story_data):
             # Combinamos Contexto de Historia + Biblia de Personajes + Acción del Panel
