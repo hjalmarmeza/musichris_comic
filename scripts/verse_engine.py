@@ -51,13 +51,13 @@ def generate_image_zhipu(prompt):
 
 def generate_image_deepinfra(prompt):
     """DeepInfra (FLUX-1-schnell)"""
-    if not DEEPINFRA_API_KEY:
-        print("  ⚠️ DeepInfra: Sin llave configurada.")
-        return None
+    if not DEEPINFRA_API_KEY: return None
     url = "https://api.deepinfra.com/v1/inference/black-forest-labs/FLUX-1-schnell"
     headers = {"Authorization": f"Bearer {DEEPINFRA_API_KEY}"}
+    # Inyectamos el filtro de integridad
+    full_prompt = f"{prompt}. Avoid: {NEGATIVE_PROMPT}"
     try:
-        response = requests.post(url, headers=headers, json={"prompt": prompt}, timeout=60)
+        response = requests.post(url, headers=headers, json={"prompt": full_prompt}, timeout=60)
         if response.status_code == 200:
             import base64
             res = response.json()
@@ -73,13 +73,13 @@ def generate_image_deepinfra(prompt):
 
 def generate_image_fal(prompt):
     """Fal.ai (FLUX-schnell)"""
-    if not FAL_AI_API_KEY:
-        print("  ⚠️ Fal.ai: Sin llave configurada.")
-        return None
+    if not FAL_AI_API_KEY: return None
     url = "https://fal.run/fal-ai/flux/schnell"
     headers = {"Authorization": f"Key {FAL_AI_API_KEY}", "Content-Type": "application/json"}
+    # Inyectamos el filtro de integridad
+    full_prompt = f"{prompt}. Avoid: {NEGATIVE_PROMPT}"
     try:
-        response = requests.post(url, headers=headers, json={"prompt": prompt}, timeout=60)
+        response = requests.post(url, headers=headers, json={"prompt": full_prompt}, timeout=60)
         if response.status_code == 200:
             img_url = response.json()['images'][0]['url']
             return requests.get(img_url).content
