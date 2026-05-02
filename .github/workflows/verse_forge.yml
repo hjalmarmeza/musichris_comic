@@ -117,11 +117,20 @@ jobs:
                   bg_song = temp_eng.get_random_bg_music()
                   bg_audio = bg_song['audio_url']
               
-              print(f"🎨 Forjando 4 paneles de alta calidad...")
-              p_paths = engine.forge_panels(story_data['story'])
+              print(f"🎨 Forjando 4 paneles con consistencia total...")
+              p_paths = engine.forge_panels(
+                  story_data['story'], 
+                  character_bible=story_data.get('character_bible', ""), 
+                  story_context=title
+              )
               
-              print("🎬 Renderizando Verse Mode...")
-              result = engine.render_motion_comic(p_paths, title, bg_audio, "final_verse.mp4", story_data)
+              print("🎬 Ensamblando Verse Mode...")
+              result = engine.assemble_video(
+                  p_paths, 
+                  story_data.get('black_texts', []), 
+                  title, 
+                  bg_audio
+              )
               print(f"🎉 ¡GLORIA A DIOS! Video Verse creado en: {result}")
               
           except Exception as e:
