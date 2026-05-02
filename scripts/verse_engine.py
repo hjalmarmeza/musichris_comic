@@ -108,6 +108,10 @@ class MusiChrisVerseEngine:
             p_img = self.temp_dir / f"p_{i}.jpg"
             img.save(p_img, quality=95)
             
+            # Si es el primer panel, guardamos copia para miniatura en el root
+            if i == 0:
+                img.save(self.base_dir / "panel_0.jpg", quality=95)
+            
             p_vid = self.assets_dir / f"p_{i}.mp4"
             zoom = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30,zoompan=z='min(zoom+0.0006,1.2)':d=300:s=1080x1920:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'"
             subprocess.run(["ffmpeg", "-y", "-loop", "1", "-i", str(p_img), "-vf", f"{zoom},fade=t=in:st=0:d=1", "-t", "10", "-c:v", "libx264", str(p_vid)], check=True)
@@ -168,6 +172,6 @@ class MusiChrisVerseEngine:
         audio = self.temp_dir / "audio.mp3"
         with open(audio, "wb") as f: f.write(requests.get(audio_url).content)
         
-        final = self.renders_dir / "final_video.mp4"
+        final = self.base_dir / "final_verse.mp4"
         subprocess.run(["ffmpeg", "-y", "-i", str(temp_v), "-i", str(audio), "-c:v", "copy", "-c:a", "aac", "-shortest", str(final)], check=True)
         return str(final)
