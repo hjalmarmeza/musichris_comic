@@ -35,11 +35,13 @@ HF_TOKEN = os.getenv("HF_TOKEN")
 def generate_image_zhipu(prompt):
     """Zhipu AI Oficial (CogView-3)"""
     if not ZHIPU_API_KEY: return None
+    # Inyectamos el Negative Prompt como instrucción directa para Zhipu
+    full_prompt = f"{prompt}. Avoid: {NEGATIVE_PROMPT}"
     try:
         client = ZhipuAI(api_key=ZHIPU_API_KEY)
         response = client.images.generations(
             model="cogview-3",
-            prompt=prompt
+            prompt=full_prompt
         )
         img_url = response.data[0].url
         return requests.get(img_url).content
@@ -103,12 +105,14 @@ def call_hf_api(prompt, model_id):
 STYLE_PROMPT = (
     ", cinematic film style, epic realism, volumetric lighting, 8k resolution, "
     "highly detailed, first century biblical setting, professional movie concept art, "
-    "historically accurate simple linen clothing, 9:16 vertical composition"
+    "historically accurate simple linen clothing, 9:16 vertical composition, "
+    "purely paternal love, respectful fatherly interaction, holy atmosphere"
 )
 NEGATIVE_PROMPT = (
+    "romantic kiss, physical intimacy, seductive, erotic, same-sex romance, "
     "crown, king crown, diadem, tiara, royal headpiece, "
     "modern objects, soap dispensers, jewelry on men, earrings on men, modern accessories, "
-    "sunglasses, romantic kiss, seductive pose, revealing clothing, electricity, neon, plastic, "
+    "sunglasses, electricity, neon, plastic, "
     "glass bottle, glass flask, glass jar, decanter, glass pump bottles, "
     "computers, phones, distorted faces, blurry, "
     "modern architecture, tattoos, watches, cars, oil painting, "
