@@ -249,15 +249,15 @@ class MusiChrisVerseEngine:
         subprocess.run(cmd, check=True)
         return str(output_video)
 
-    def forge_panels(self, story_data, character_bible=""):
-        """Forja los paneles usando el enjambre de IAs con consistencia de personajes."""
+    def forge_panels(self, story_data, character_bible="", story_context=""):
+        """Forja los paneles usando el enjambre de IAs con consistencia y contexto."""
         print(f"🎨 Forjando {len(story_data)} paneles de alta calidad...")
         panel_paths = []
         
         for i, item in enumerate(story_data):
-            # Combinamos la Biblia de Personajes con la acción del panel
+            # Combinamos Contexto de Historia + Biblia de Personajes + Acción del Panel
             base_prompt = item['prompt']
-            full_visual_prompt = f"{character_bible}. {base_prompt}" if character_bible else base_prompt
+            full_visual_prompt = f"Thematic Context: {story_context}. Characters: {character_bible}. Scene: {base_prompt}"
             
             print(f"🎨 Panel {i+1}/{len(story_data)} (Iniciando)...")
             img_data = self.generate_image_hf_direct(full_visual_prompt)
