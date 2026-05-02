@@ -249,13 +249,18 @@ class MusiChrisVerseEngine:
         subprocess.run(cmd, check=True)
         return str(output_video)
 
-    def forge_panels(self, story_panels):
-        """Genera 4 paneles. EL SUPERVISOR NO PERMITE FALLOS."""
-        panel_vids = []
+    def forge_panels(self, story_data, character_bible=""):
+        """Forja los paneles usando el enjambre de IAs con consistencia de personajes."""
+        print(f"🎨 Forjando {len(story_data)} paneles de alta calidad...")
+        panel_paths = []
         
-        for i, p in enumerate(story_panels[:4]):
-            print(f"🎨 Panel {i+1}/4 (10s)...")
-            img_data = self.generate_image_hf(p.get('prompt') or p.get('image_prompt'))
+        for i, item in enumerate(story_data):
+            # Combinamos la Biblia de Personajes con la acción del panel
+            base_prompt = item['prompt']
+            full_visual_prompt = f"{character_bible}. {base_prompt}" if character_bible else base_prompt
+            
+            print(f"🎨 Panel {i+1}/{len(story_data)} (Iniciando)...")
+            img_data = self.generate_image_hf_direct(full_visual_prompt)
             
             if not img_data:
                 print(f"🚨 FALLO CRÍTICO DE CALIDAD: El Panel {i+1} no pudo ser generado.")
