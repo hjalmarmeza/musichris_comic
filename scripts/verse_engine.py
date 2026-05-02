@@ -26,19 +26,29 @@ load_dotenv()
 HF_TOKEN = os.getenv("HF_TOKEN")
 MODEL_PRIMARY = "black-forest-labs/FLUX.1-schnell"
 MODEL_SECONDARY = "stabilityai/stable-diffusion-xl-base-1.0"
+MODEL_TERTIARY = "prompthero/openjourney"
 
 def call_hf_api(prompt, model_id):
-    """Llamada directa al API de Hugging Face para máxima estabilidad."""
+    """Llamada directa al API de Hugging Face con manejo de estados de carga."""
     api_url = f"https://api-inference.huggingface.co/models/{model_id}"
     headers = {"Authorization": f"Bearer {HF_TOKEN}"}
-    payload = {"inputs": prompt, "parameters": {"guidance_scale": 7.5}}
+    payload = {"inputs": prompt}
     
     try:
-        response = requests.post(api_url, headers=headers, json=payload, timeout=45)
+        response = requests.post(api_url, headers=headers, json=payload, timeout=60)
         if response.status_code == 200:
-            return response.content
+            # Validar que sea una imagen real y no un JSON de error
+            if response.headers.get('content-type', '').startswith('image'):
+                return response.content
+            else:
+                print(f"  ⚠️ Respuesta no es imagen ({model_id}): {response.text[:100]}")
+                return None
+        elif response.status_code == 503:
+            print(f"  ⏳ Modelo {model_id} cargando... esperando 20s.")
+            time.sleep(20)
+            return None
         else:
-            print(f"  ⚠️ Error API ({model_id}): {response.status_code} - {response.text}")
+            print(f"  ⚠️ Error API ({model_id}): {response.status_code}")
             return None
     except Exception as e:
         print(f"  ⚠️ Error de conexión ({model_id}): {e}")
@@ -73,21 +83,22 @@ def get_font(size):
         except:
             return ImageFont.load_default()
 
-def generate_image_hf_direct(prompt, retries=2):
-    """Generador con Supervisor: Intenta FLUX, luego SDXL."""
+def generate_image_hf_direct(prompt, retries=5):
+    """Guerrero de Calidad: Intenta múltiples modelos hasta lograr éxito."""
     if not HF_TOKEN:
-        print("  ❌ ERROR CRÍTICO: HF_TOKEN no detectado. Revisa los Secretos de GitHub.")
-        return None
+        raise Exception("❌ ERROR CRÍTICO: HF_TOKEN no detectado. Operación abortada por seguridad.")
         
-    # Intento con Modelo Primario (FLUX)
-    print(f"  🔍 SUPERVISOR: Solicitando imagen a modelo primario (FLUX)...")
-    data = call_hf_api(prompt, MODEL_PRIMARY)
-    if data: return data
+    models = [MODEL_PRIMARY, MODEL_SECONDARY, MODEL_TERTIARY]
     
-    # Intento con Modelo Secundario (SDXL)
-    print(f"  🔍 SUPERVISOR: FLUX falló. Reintentando con modelo de respaldo (SDXL)...")
-    data = call_hf_api(prompt, MODEL_SECONDARY)
-    if data: return data
+    for attempt in range(retries):
+        for m_id in models:
+            print(f"  🔍 SUPERVISOR: Intento {attempt+1} con modelo {m_id.split('/')[-1]}...")
+            data = call_hf_api(prompt, m_id)
+            if data:
+                print(f"  ✅ SUPERVISOR: Imagen validada con éxito.")
+                return data
+        print(f"  ⚠️ SUPERVISOR: Intento {attempt+1} fallido en todos los modelos. Reintentando ciclo...")
+        time.sleep(10)
     
     return None
 
@@ -183,28 +194,19 @@ class MusiChrisVerseEngine:
         return str(output_video)
 
     def forge_panels(self, story_panels):
-        """Genera 4 paneles. El Supervisor valida cada imagen."""
+        """Genera 4 paneles. EL SUPERVISOR NO PERMITE FALLOS."""
         panel_vids = []
-        valid_images = 0
         
         for i, p in enumerate(story_panels[:4]):
             print(f"🎨 Panel {i+1}/4 (10s)...")
             img_data = self.generate_image_hf(p.get('prompt') or p.get('image_prompt'))
             
-            if img_data:
-                img = Image.open(io.BytesIO(img_data)).convert('RGB')
-                valid_images += 1
-            else:
-                print(f"  ❌ SUPERVISOR: No se pudo generar imagen para Panel {i+1}. Usando pausa solemne.")
-                img = Image.new('RGB', (1080, 1920), (15, 15, 30))
-                draw = ImageDraw.Draw(img)
-                f_back = get_font(40)
-                draw.text((100, 900), "Visualizando Palabra...", font=f_back, fill=(80, 80, 120))
+            if not img_data:
+                print(f"🚨 FALLO CRÍTICO DE CALIDAD: El Panel {i+1} no pudo ser generado.")
+                print("🚨 EL SUPERVISOR ABORTA LA MISIÓN. No se entregará un video incompleto.")
+                raise Exception(f"Calidad Ministerial Insuficiente: Panel {i+1} falló.")
             
-            # Control de calidad final
-            if valid_images == 0 and i == 3:
-                print("🚨 ALERTA DE CALIDAD: No se generó NINGUNA imagen. El video será rechazado.")
-            
+            img = Image.open(io.BytesIO(img_data)).convert('RGB')
             w, h = img.size
             aspect = 1080/1920
             if w/h > aspect:
