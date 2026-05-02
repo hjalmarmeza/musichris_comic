@@ -20,6 +20,7 @@
     radial-gradient(circle at 80% 70%, rgba(139, 92, 246, 0.15) 0%, transparent 50%);
   filter: blur(120px);
   z-index: 0;
+  pointer-events: none; /* Crucial: permite clicks a través del fondo */
   animation: drift 25s infinite alternate ease-in-out;
 }
 
@@ -98,6 +99,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  position: relative;
+  z-index: 20;
 }
 
 .brand-tag {
@@ -144,6 +147,8 @@
   padding: 3px;
   border-radius: 12px;
   gap: 5px;
+  position: relative;
+  z-index: 20;
 }
 
 .mode-selector button {
