@@ -57,21 +57,26 @@ def get_font(size):
             return ImageFont.load_default()
 
 def generate_image_hf_direct(prompt, retries=3):
-    """Genera imagen usando FLUX.1-schnell."""
+    """Genera imagen usando FLUX.1-schnell con reintentos y logs."""
+    if not HF_TOKEN:
+        print("  ❌ ERROR: HF_TOKEN no configurado en el entorno.")
+        return None
+        
     for i in range(retries):
         try:
             print(f"  🖼️ Generando imagen (Verse Mode - Intento {i+1})...")
+            # Usamos el cliente con timeout explícito
             image = client.text_to_image(
                 prompt,
                 model=MODEL_ID,
-                negative_prompt=NEGATIVE_PROMPT,
             )
             img_byte_arr = io.BytesIO()
             image.save(img_byte_arr, format='PNG')
+            print(f"  ✅ Imagen generada con éxito (Intento {i+1})")
             return img_byte_arr.getvalue()
         except Exception as e:
-            print(f"  ⚠️ Intento {i+1} falló: {e}")
-            time.sleep(15)
+            print(f"  ⚠️ Intento {i+1} falló: {str(e)}")
+            time.sleep(10)
     return None
 
 class MusiChrisVerseEngine:
@@ -166,14 +171,24 @@ class MusiChrisVerseEngine:
         return str(output_video)
 
     def forge_panels(self, story_panels):
-        """Genera 4 paneles de 10s SIN TEXTO."""
+        """Genera 4 paneles de 10s. Si la IA falla, usa fondo atmosférico."""
         panel_vids = []
         for i, p in enumerate(story_panels[:4]):
             print(f"🎨 Panel {i+1}/4 (10s)...")
             img_data = self.generate_image_hf(p.get('prompt') or p.get('image_prompt'))
-            if not img_data: continue
             
-            img = Image.open(io.BytesIO(img_data)).convert('RGB')
+            if img_data:
+                img = Image.open(io.BytesIO(img_data)).convert('RGB')
+            else:
+                print(f"  🌫️ Usando respaldo atmosférico para Panel {i+1}")
+                # Crear fondo degradado elegante (Deep Indigo)
+                img = Image.new('RGB', (1080, 1920), (10, 10, 25))
+                draw = ImageDraw.Draw(img)
+                f_back = get_font(50)
+                txt = "Caminemos Juntos en Fe"
+                bbox = draw.textbbox((0, 0), txt, font=f_back)
+                draw.text(((1080-(bbox[2]-bbox[0]))/2, 1700), txt, font=f_back, fill=(100, 100, 150))
+            
             w, h = img.size
             aspect = 1080/1920
             if w/h > aspect:
