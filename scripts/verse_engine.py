@@ -112,8 +112,8 @@ class MusiChrisVerseEngine:
             )
         
         drawtext_brand = (
-            f"drawtext=fontfile='{FONT_PATH}':text='@MusiChris Studio':fontcolor=white:fontsize=40:"
-            f"x=(w-text_w)/2:y=(h/2)+60:box=1:boxcolor=black@0.4:boxborderw=12"
+            f"drawtext=fontfile='{FONT_PATH}':text='@MusiChris Studio':fontcolor=white:fontsize=45:"
+            f"x=(w-text_w)/2:y=(h/2)+300:box=1:boxcolor=black@0.4:boxborderw=15"
         )
         
         vf = f"scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30,format=yuv420p,{drawtext_title},{drawtext_brand}"
@@ -229,10 +229,19 @@ class MusiChrisVerseEngine:
         else:
             subprocess.run(["ffmpeg", "-y", "-f", "lavfi", "-i", "color=c=black:s=1080x1920:r=30:d=8", "-vf", outro_vf, "-c:v", "libx264", "-pix_fmt", "yuv420p", str(outro_final)], check=True)
 
-        # Secuencia: Intro (8) + P1 (10) + P2 (10) + Black1 (5) + P3 (10) + P4 (10) + Black2 (5) + Outro (8)
+        # Secuencia robusta: Intro (8) + Paneles + Reflexiones + Outro (8)
         seq = [intro_path]
-        if len(panel_paths) >= 2: seq.extend(panel_paths[:2]); seq.append(black1)
-        if len(panel_paths) >= 4: seq.extend(panel_paths[2:4]); seq.append(black2)
+        
+        # Añadir paneles 1 y 2 si existen
+        p12 = panel_paths[:2]
+        seq.extend(p12)
+        seq.append(black1)
+        
+        # Añadir paneles 3 y 4 si existen
+        p34 = panel_paths[2:4]
+        seq.extend(p34)
+        seq.append(black2)
+        
         seq.append(str(outro_final))
         
         concat_list = self.temp_dir / "concat_list.txt"
