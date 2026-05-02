@@ -4,7 +4,7 @@ import catalogData from '../data/catalog.json';
 
 function App() {
   const [showSplash, setShowSplash] = useState(true);
-  const [mode, setMode] = useState('manual'); // 'manual' or 'song'
+  const [mode, setMode] = useState('verse'); // 'verse' as default
   const [storyTitle, setStoryTitle] = useState('');
   const [storyIdea, setStoryIdea] = useState('');
   const [selectedSong, setSelectedSong] = useState(null);
@@ -102,7 +102,7 @@ function App() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          event_type: 'forge_comic',
+          event_type: 'verse_forge', // Siempre usamos verse_forge ahora
           client_payload: payload
         }),
         signal: controller.signal
@@ -165,31 +165,31 @@ function App() {
       </header>
 
       <div className="mode-selector">
-        <button className={mode === 'manual' ? 'active' : ''} onClick={() => setMode('manual')}>MANUAL</button>
-        <button className={mode === 'song' ? 'active' : ''} onClick={() => setMode('song')}>SONG TO STORY</button>
+        <button className={mode === 'verse' ? 'active verse-glow-btn' : ''} onClick={() => setMode('verse')}>VERSE MANUAL</button>
+        <button className={mode === 'song' ? 'active verse-glow-btn' : ''} onClick={() => setMode('song')}>VERSE MUSICAL</button>
       </div>
 
       <main className="glass-card" style={{ marginTop: '10px' }}>
         {!isForging ? (
           <>
-            {mode === 'manual' ? (
+            {mode === 'manual' || mode === 'verse' ? (
               <div className="fade-in">
                 <div className="input-group">
                   <div className="input-field">
-                    <label className="label-comic">Título del Video</label>
+                    <label className="label-comic">{mode === 'verse' ? 'Versículo / Referencia' : 'Título del Video'}</label>
                     <input 
                       type="text"
-                      placeholder="Ej: La Fe de Abraham"
+                      placeholder={mode === 'verse' ? "Ej: Salmos 23:1" : "Ej: La Fe de Abraham"}
                       value={storyTitle}
                       onChange={(e) => setStoryTitle(e.target.value)}
                       className="input-comic"
                     />
                   </div>
                   <div className="input-field">
-                    <label className="label-comic">Idea Central o Enseñanza</label>
+                    <label className="label-comic">{mode === 'verse' ? 'Reflexión Profunda' : 'Idea Central o Enseñanza'}</label>
                     <textarea 
                       rows="4" 
-                      placeholder="Describe la enseñanza o historia bíblica que quieres convertir en cómic..."
+                      placeholder={mode === 'verse' ? "Describe la escena o el mensaje que quieres visualizar en 4 actos..." : "Describe la enseñanza o historia bíblica que quieres convertir en cómic..."}
                       value={storyIdea}
                       onChange={(e) => setStoryIdea(e.target.value)}
                       className="input-comic"
@@ -197,12 +197,12 @@ function App() {
                   </div>
                   
                   <button 
-                    className="forge-button-glow"
+                    className="forge-button-glow verse-glow"
                     style={{ marginTop: '20px' }}
                     onClick={handleForge}
                     disabled={isForging || !storyTitle || !storyIdea}
                   >
-                    {status || '🚀 FORJAR HISTORIA MANUAL'}
+                    {status || '✨ INICIAR FORJA VERSE'}
                   </button>
                 </div>
               </div>
@@ -245,11 +245,11 @@ function App() {
                     </div>
                     
                     <button 
-                      className="forge-button-glow"
+                      className="forge-button-glow verse-glow"
                       onClick={handleForge}
                       disabled={isForging}
                     >
-                      {status || '🚀 INICIAR FORJA DE CÓMIC'}
+                      {status || '✨ INICIAR FORJA VERSE'}
                     </button>
                   </div>
                 )}

@@ -1,0 +1,143 @@
+name: 🎬 MusiChris Verse Forge
+
+on:
+  repository_dispatch:
+    types: [verse_forge]
+
+jobs:
+  forge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      VIDEO_TITLE: "${{ github.event.client_payload.title }} | @MusiChris Studio"
+      VIDEO_DESCRIPTION: "📖 Versículo en Movimiento por @MusiChris Studio\n\nReflexión: ${{ github.event.client_payload.description }}\n\n#Shorts #Biblia #VerseMode #Ministerio"
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: 🧠 AI Verse Expansion
+        env:
+          CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}
+        run: |
+          node << 'EOF'
+          const https = require('https');
+          const fs = require('fs');
+
+          const rawTitle = `${{ github.event.client_payload.title }}`;
+          const rawIdea = `${{ github.event.client_payload.description }}`;
+
+          async function callCerebras(messages) {
+            return new Promise((resolve, reject) => {
+              const req = https.request({
+                hostname: 'api.cerebras.ai',
+                path: '/v1/chat/completions',
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': 'Bearer ' + process.env.CEREBRAS_API_KEY
+                }
+              }, (res) => {
+                let data = '';
+                res.on('data', (chunk) => data += chunk);
+                res.on('end', () => {
+                  if (res.statusCode === 200) resolve(JSON.parse(data).choices[0].message.content);
+                  else reject(new Error('Cerebras Error: ' + data));
+                });
+              });
+              req.on('error', reject);
+              req.write(JSON.stringify({ model: 'llama3.1-8b', messages, response_format: { type: "json_object" } }));
+              req.end();
+            });
+          }
+
+          async function produceVerse() {
+            console.log('📜 [VERSE ENGINE] Generando secuencia cinematográfica coherente...');
+            let draft = await callCerebras([
+              { 
+                role: 'system', 
+                content: 'Eres el Director de Arte de @MusiChris Verse Engine. Tu misión es crear una SECUENCIA CINEMATOGRÁFICA COHERENTE de 4 actos. REGLAS CRÍTICAS: 1. CONSISTENCIA VISUAL: Los 4 paneles DEBEN ocurrir en el mismo escenario, con la misma iluminación y los mismos personajes. 2. NARRATIVA ÚNICA: No cuentes historias diferentes; cuenta UNA sola historia o momento que progrese en 4 pasos. 3. ESTILO: Realismo épico, sin texto. SCHEMA: {"creative_title": "...", "story": [{"prompt": "Visual prompt sharing same setting/character as previous...", "text": "Narrative fragment..."}], "black_texts": ["Summary 1 (Panels 1-2)", "Summary 2 (Panels 3-4)"]}.' 
+              },
+              { role: 'user', content: `Título: ${rawTitle}. Idea del Versículo: ${rawIdea}.` }
+            ]);
+
+            const jsonMatch = draft.match(/\{[\s\S]*\}/);
+            if (!jsonMatch) throw new Error('No se pudo generar un JSON válido.');
+            fs.writeFileSync('story_expanded.json', jsonMatch[0]);
+          }
+
+          produceVerse().catch(err => {
+            console.error('❌ ERROR CRÍTICO:', err.message);
+            process.exit(1);
+          });
+          EOF
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: 📦 Install Python Dependencies
+        run: pip install huggingface_hub Pillow requests python-dotenv
+
+      - name: 🎥 Install FFmpeg + Fonts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-dejavu-core
+          fc-list | grep -i dejavu | grep Bold
+
+      - name: 🎨 Forging Verse Mode
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          cat > verse_runner.py << 'PYEOF'
+          import os, sys, json, traceback
+          sys.path.insert(0, os.getcwd())
+          from scripts.verse_engine import MusiChrisVerseEngine
+          
+          try:
+              with open('story_expanded.json', 'r') as f:
+                  story_data = json.load(f)
+              
+              title = story_data.get('creative_title', os.getenv('VIDEO_TITLE', 'MusiChris Verse'))
+              song_url = "${{ github.event.client_payload.song_url }}"
+              
+              engine = MusiChrisVerseEngine()
+              
+              if song_url and song_url.strip():
+                  bg_audio = song_url
+              else:
+                  # Para Verse Mode usamos una música solemne por defecto o aleatoria del catálogo original
+                  # Importamos el motor original solo para la música si es necesario
+                  from scripts.comic_engine import MusiChrisComicEngine
+                  temp_eng = MusiChrisComicEngine()
+                  bg_song = temp_eng.get_random_bg_music()
+                  bg_audio = bg_song['audio_url']
+              
+              print(f"🎨 Forjando 4 paneles de alta calidad...")
+              p_paths = engine.forge_panels(story_data['story'])
+              
+              print("🎬 Renderizando Verse Mode...")
+              result = engine.render_motion_comic(p_paths, title, bg_audio, "final_verse.mp4", story_data)
+              print(f"🎉 ¡GLORIA A DIOS! Video Verse creado en: {result}")
+              
+          except Exception as e:
+              traceback.print_exc()
+              sys.exit(1)
+          PYEOF
+          python3 verse_runner.py
+
+      - name: 🔍 Diagnostic & Upload
+        env:
+          YOUTUBE_CREDENTIALS: ${{ secrets.YOUTUBE_CREDENTIALS }}
+          YOUTUBE_TOKEN: ${{ secrets.YOUTUBE_TOKEN }}
+        run: |
+          VIDEO_FILE=$(find . -name "final_verse.mp4" | head -n 1)
+          # Buscamos la primera imagen del panel como miniatura
+          THUMB_FILE=$(find . -name "panel_0.jpg" | head -n 1)
+          
+          if [ -z "$VIDEO_FILE" ]; then
+            echo "❌ ERROR: No se encontró el video."
+            exit 1
+          fi
+          
+          node scripts/upload_engine.cjs "$VIDEO_FILE" "$THUMB_FILE"
