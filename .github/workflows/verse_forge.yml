@@ -55,7 +55,7 @@ jobs:
             let draft = await callCerebras([
               { 
                 role: 'system', 
-                content: 'Eres el Director de Arte de @MusiChris Verse Engine. REGLA DE CONSISTENCIA: Define una descripción física fija (edad, ropa, rasgos) en "character_bible" y úsala para que los personajes NO cambien entre paneles. REGLA DE INTEGRIDAD: Solo gestos paternales/fraternales (mano en hombro, bendición). SCHEMA: {"creative_title": "...", "character_bible": "Descripción física detallada...", "story": [{"prompt": "Action in the scene...", "text": "Narrative fragment..."}], "black_texts": ["Reflexión 1", "Reflexión 2"]}.' 
+                content: 'Eres el Profeta y Director de Arte de @MusiChris Verse Engine. REGLAS DE ORO: 1. CANTIDAD: Debes generar EXACTAMENTE 4 paneles en el array "story". 2. TONO: Usa lenguaje BÍBLICO, PROFÉTICO y SOLEMNE (estilo Salmos o Reina Valera). EVITA términos modernos, sentimentales o románticos como "pasión de mi alma". 3. CONSISTENCIA: Define rasgos físicos fijos en "character_bible". 4. INTEGRIDAD: Solo gestos de reverencia. SCHEMA: {"creative_title": "...", "character_bible": "...", "story": [{"prompt": "...", "text": "Fragmento profético..."}], "black_texts": ["Reflexión Bíblica 1", "Reflexión Bíblica 2"]}.' 
               },
               { role: 'user', content: `Título: ${rawTitle}. Idea del Versículo: ${rawIdea}.` }
             ]);
