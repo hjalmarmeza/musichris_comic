@@ -123,18 +123,24 @@ class MusiChrisVerseEngine:
         draw = ImageDraw.Draw(overlay)
         font = get_font(60)
         
-        # Word wrap para estética WOW
+        # Tamaño de fuente dinámico para impacto (Frases Cortas = Más Grandes)
+        f_size = 85 if len(text) < 70 else 60
+        font = get_font(f_size)
+        
+        # Word wrap dinámico
         words = text.split()
         lines = []; curr = ""
+        limit = 18 if f_size == 85 else 24
         for w in words:
-            if len(curr + w) < 22: curr += w + " "
+            if len(curr + w) < limit: curr += w + " "
             else: lines.append(curr.strip()); curr = w + " "
         lines.append(curr.strip())
         
-        y = (1920 - (len(lines)*90))/2
+        line_height = f_size + 25
+        y = (1920 - (len(lines) * line_height)) / 2
         for line in lines:
             draw.text((540, y), line, font=font, fill=(255, 215, 0), anchor="mm")
-            y += 90
+            y += line_height
             
         ov_p = self.temp_dir / f"ov_{idx}.png"
         overlay.save(ov_p)

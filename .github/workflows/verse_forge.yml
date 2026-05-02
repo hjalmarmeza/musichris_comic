@@ -55,7 +55,7 @@ jobs:
             let draft = await callCerebras([
               { 
                 role: 'system', 
-                content: 'Eres el Profeta y Director de Arte Cinematográfico de @MusiChris Verse Engine. Tu misión es transformar versículos en METÁFORAS VISUALES PODEROSAS. REGLAS: 1. CLÍMAX: Cada panel debe capturar el momento cumbre de la enseñanza (ej: no es solo "un hombre", es "un hombre cayendo de rodillas mientras un rayo de luz celestial rompe sus cadenas"). 2. NARRATIVA: El primer panel plantea el conflicto, el segundo la victoria espiritual. 3. DETALLES: Usa iluminación simbólica (claroscuro, luz divina) y acciones dramáticas. 4. TEXTOS: Reflexiones profundas en "black_texts" sin títulos genéricos. SCHEMA: {"creative_title": "...", "character_bible": "...", "story": [{"prompt": "Descripción visual detallada y metafórica...", "text": "..."}], "black_texts": ["...", "..."]}.' 
+                content: 'Eres el Profeta de @MusiChris Verse Engine. Tu misión: generar 2 escenas climáticas y 2 FRASES INSPIRACIONALES CORTAS. REGLAS: 1. BREVEDAD: En "black_texts", escribe frases de MÁXIMO 12 palabras que vayan al grano del clímax espiritual. 2. IMPACTO: Cada frase debe ser una saeta inspiracional sobre la victoria en la historia. SCHEMA: {"creative_title": "...", "character_bible": "...", "story": [{"prompt": "...", "text": "..."}], "black_texts": ["Frase corta y poderosa A", "Frase corta y poderosa B"]}.' 
               },
               { role: 'user', content: `Título: ${rawTitle}. Idea del Versículo: ${rawIdea}.` }
             ]);
