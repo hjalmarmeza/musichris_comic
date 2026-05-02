@@ -13,26 +13,28 @@ from io import BytesIO
 from zhipuai import ZhipuAI
 from PIL import Image, ImageDraw, ImageFont
 
-# --- CONFIGURACIÓN MAESTRA ---
+# --- CONFIGURACIÓN MAESTRA (Skill Flow v3.7) ---
 load_dotenv()
 ZHIPU_API_KEY = os.getenv("API_ZHIPU_AI")
 DEEPINFRA_API_KEY = os.getenv("DEEPINFRA_API_KEY")
 FAL_AI_API_KEY = os.getenv("FALTA_AI_API_KEY")
 HF_TOKEN = os.getenv("HF_TOKEN")
 
+# Ruta de fuente robusta para GitHub Actions
 FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 if not Path(FONT_PATH).exists():
-    FONT_PATH = "/System/Library/Fonts/Supplemental/Verdana Bold.ttf" # Fallback Mac
+    FONT_PATH = "/System/Library/Fonts/Supplemental/Verdana Bold.ttf"
 
+# Ley de Integridad Visual: Cero elementos modernos
 STYLE_PROMPT = (
-    ", ancient biblical world, first century clothing, cinematic epic realism, "
-    "sacred atmosphere, volumetric dust, 8k resolution, vertical 9:16 composition"
+    ", ancient biblical scenery, first century simple linen clothing, cinematic epic realism, "
+    "sacred atmosphere, volumetric dust, 8k resolution, vertical 9:16 composition, movie lighting"
 )
 
 NEGATIVE_PROMPT = (
-    "glasses, sunglasses, modern clothes, jewelry, wristwatch, zippers, buttons, "
-    "romantic, physical intimacy, smiling, looking at camera, distorted faces, "
-    "blurry, 3d render, cartoon"
+    "glasses, sunglasses, spectacles, eyewear, modern clothes, jewelry, wristwatch, "
+    "zippers, buttons, electronics, romantic, physical intimacy, smiling, looking at camera, "
+    "distorted faces, blurry, 3d render, cartoon, digital art style"
 )
 
 def get_font(size):
@@ -69,17 +71,19 @@ def generate_image_hf(prompt):
         return img_byte_arr.getvalue()
     except: return None
 
-# --- MOTOR DE PRODUCCIÓN ---
+# --- MOTOR DE PRODUCCIÓN VERSE ENGINE ---
 class MusiChrisVerseEngine:
     def __init__(self):
         self.base_dir = Path(os.getcwd()).absolute()
         self.assets_dir = self.base_dir / "assets/panels"
-        self.branding_dir = self.base_dir / "assets/branding"
+        self.video_assets = self.base_dir / "assets/video"
+        self.public_dir = self.base_dir / "public"
         self.temp_dir = self.base_dir / "temp"
-        for d in [self.assets_dir, self.temp_dir, self.branding_dir]: d.mkdir(parents=True, exist_ok=True)
+        for d in [self.assets_dir, self.temp_dir, self.video_assets, self.public_dir]: d.mkdir(parents=True, exist_ok=True)
 
     def generate_image_swarm(self, prompt):
-        full_prompt = prompt + STYLE_PROMPT
+        # Ley de Integridad #4: Estética WOW. Forzamos la relación con el versículo.
+        full_prompt = "SCENE DESCRIPTION: " + prompt + STYLE_PROMPT
         for name, func in [("Zhipu", generate_image_zhipu), ("DeepInfra", generate_image_deepinfra), ("HF", generate_image_hf)]:
             print(f"  🔍 SUPERVISOR: Intentando con {name}...")
             data = func(full_prompt)
@@ -87,14 +91,14 @@ class MusiChrisVerseEngine:
         return None
 
     def forge_panels(self, story_data, character_bible="", story_context=""):
-        print(f"🎨 Forjando 2 paneles bíblicos...")
+        print(f"🎨 Forjando 2 paneles bíblicos de alta fidelidad...")
         panel_vids = []
         safe_story = list(story_data)
         while len(safe_story) < 2: safe_story.append(safe_story[-1])
         
         for i, item in enumerate(safe_story[:2]):
-            # INYECTAMOS CONTEXTO TOTAL PARA EVITAR LENTES Y MODERNIDAD
-            prompt = f"Biblical scene: {item['prompt']}. Context: {story_context}. {character_bible}. NO MODERN CLOTHES, NO GLASSES."
+            # Blindaje contra lentes y modernidad (Integridad de Personaje)
+            prompt = f"STRICTLY NO GLASSES. Biblical context: {story_context}. Characters: {character_bible}. Scene: {item['prompt']}"
             print(f"🎨 Panel {i+1}/2...")
             img_data = self.generate_image_swarm(prompt)
             if not img_data: raise Exception(f"Fallo en Panel {i+1}")
@@ -112,13 +116,13 @@ class MusiChrisVerseEngine:
         return panel_vids
 
     def generate_text_screen(self, text, idx, duration=6):
-        """Pantalla de texto sagrado con PIL."""
+        """Pantalla de texto sagrado (Sin títulos genéricos)."""
         out = self.temp_dir / f"screen_{idx}.mp4"
         overlay = Image.new('RGB', (1080, 1920), (0, 0, 0))
         draw = ImageDraw.Draw(overlay)
         font = get_font(60)
         
-        # Word wrap robusto
+        # Word wrap para estética WOW
         words = text.split()
         lines = []; curr = ""
         for w in words:
@@ -126,10 +130,10 @@ class MusiChrisVerseEngine:
             else: lines.append(curr.strip()); curr = w + " "
         lines.append(curr.strip())
         
-        y = (1920 - (len(lines)*80))/2
+        y = (1920 - (len(lines)*90))/2
         for line in lines:
             draw.text((540, y), line, font=font, fill=(255, 215, 0), anchor="mm")
-            y += 80
+            y += 90
             
         ov_p = self.temp_dir / f"ov_{idx}.png"
         overlay.save(ov_p)
@@ -137,20 +141,31 @@ class MusiChrisVerseEngine:
         return str(out)
 
     def assemble_video(self, panel_vids, black_texts, title, audio_url):
-        """Ensamblado Final con Marca MusiChris."""
-        print("🎬 Ensamblando Video con Marca...")
+        """Ensamblado Final (Restauración de Marca Original)."""
+        print("🎬 Ensamblando con Identidad MusiChris Studio...")
         
-        # 1. Recuperar Intro y Outro originales (o crearlos si no existen)
-        intro = self.branding_dir / "intro_verse.mp4"
-        if not intro.exists():
-            # Crear un intro elegante con título si no está el video de marca
-            subprocess.run(["ffmpeg", "-y", "-f", "lavfi", "-i", "color=c=#1a0a00:s=1080x1920:d=5", "-vf", f"drawtext=text='{title}':fontcolor=gold:fontsize=80:x=(w-text_w)/2:y=(h-text_h)/2", "-c:v", "libx264", str(intro)], check=True)
+        # 1. RESTAURAR INTRO ANIMADO ORIGINAL
+        intro_file = self.public_dir / "video_pantalla_inicio.mp4"
+        intro_out = self.temp_dir / "intro_final.mp4"
+        if intro_file.exists():
+            print(f"✅ Usando Intro Original: {intro_file.name}")
+            # Overlay del título sobre el video de marca
+            vf = f"scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,drawtext=fontfile='{FONT_PATH}':text='{title}':fontcolor=gold:fontsize=85:x=(w-text_w)/2:y=(h/2)-150"
+            subprocess.run(["ffmpeg", "-y", "-i", str(intro_file), "-vf", vf, "-t", "6", "-c:v", "libx264", str(intro_out)], check=True)
+        else:
+            # Fallback si no está el video, pero con estética premium
+            intro_out = self.generate_text_screen(title, "intro_fallback", duration=6)
 
-        outro = self.branding_dir / "outro_verse.mp4"
-        if not outro.exists():
-             subprocess.run(["ffmpeg", "-y", "-f", "lavfi", "-i", "color=c=black:s=1080x1920:d=5", "-vf", "drawtext=text='@MusiChris Studio':fontcolor=gold:fontsize=70:x=(w-text_w)/2:y=(h/2)", "-c:v", "libx264", str(outro)], check=True)
+        # 2. RESTAURAR OUTRO ANIMADO CON LOGO
+        outro_file = self.video_assets / "outro.mp4"
+        outro_out = self.temp_dir / "outro_final.mp4"
+        if outro_file.exists():
+            print(f"✅ Usando Outro Animado Original: {outro_file.name}")
+            subprocess.run(["ffmpeg", "-y", "-i", str(outro_file), "-vf", "scale=1080:1920,setsar=1", "-t", "8", "-c:v", "libx264", str(outro_out)], check=True)
+        else:
+            outro_out = self.generate_text_screen("@MusiChris Studio", "outro_fallback", duration=8)
 
-        # 2. Preparar Textos (eliminando títulos basura como 'Reflexion 1')
+        # 3. FILTRO DE TEXTOS (Eliminar 'Reflexión 1', etc.)
         safe_texts = []
         for t in black_texts[:2]:
             clean_t = re.sub(r'^(Reflexión|Parte|Título|Reflexion)\s*(\d+|Bíblica)\s*:?\s*', '', t, flags=re.I)
@@ -160,8 +175,8 @@ class MusiChrisVerseEngine:
         t1 = self.generate_text_screen(safe_texts[0], "t1")
         t2 = self.generate_text_screen(safe_texts[1], "t2")
         
-        # Secuencia: Intro -> P1 -> T1 -> P2 -> T2 -> Outro
-        seq = [str(intro), panel_vids[0], t1, panel_vids[1], t2, str(outro)]
+        # Secuencia Maestra: Intro -> P1 -> T1 -> P2 -> T2 -> Outro
+        seq = [str(intro_out), panel_vids[0], t1, panel_vids[1], t2, str(outro_out)]
         
         concat_list = self.temp_dir / "list.txt"
         with open(concat_list, "w") as f:
