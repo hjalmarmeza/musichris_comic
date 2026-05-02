@@ -28,6 +28,7 @@ if not Path(FONT_PATH).exists():
 # Ley de Integridad Visual: Cero elementos modernos
 STYLE_PROMPT = (
     ", high-drama biblical cinematography, epic storytelling, dramatic chiaroscuro lighting, "
+    "ancient first-century linen tunic and sandals, no modern clothing, "
     "sacred symbolism, movie concept art, masterpiece, ultra-detailed 8k, "
     "vertical 9:16, solemn and powerful atmosphere"
 )
@@ -66,7 +67,11 @@ def generate_image_hf(prompt):
     if not HF_TOKEN: return None
     client = InferenceClient(api_key=HF_TOKEN)
     try:
-        image = client.text_to_image(prompt, model="stabilityai/stable-diffusion-xl-base-1.0")
+        image = client.text_to_image(
+            prompt,
+            model="stabilityai/stable-diffusion-xl-base-1.0",
+            negative_prompt=NEGATIVE_PROMPT
+        )
         img_byte_arr = io.BytesIO()
         image.save(img_byte_arr, format='PNG')
         return img_byte_arr.getvalue()
@@ -121,7 +126,6 @@ class MusiChrisVerseEngine:
         out = self.temp_dir / f"screen_{idx}.mp4"
         overlay = Image.new('RGB', (1080, 1920), (0, 0, 0))
         draw = ImageDraw.Draw(overlay)
-        font = get_font(60)
         
         # Tamaño de fuente dinámico para impacto (Frases Cortas = Más Grandes)
         f_size = 85 if len(text) < 70 else 60
@@ -154,13 +158,30 @@ class MusiChrisVerseEngine:
         # 1. RESTAURAR INTRO ANIMADO ORIGINAL
         intro_file = self.public_dir / "video_pantalla_inicio.mp4"
         intro_out = self.temp_dir / "intro_final.mp4"
+        # Usar PIL para el overlay del título (evita fallos de fuente con FFMPEG)
+        title_overlay = Image.new('RGBA', (1080, 1920), (0, 0, 0, 0))
+        td = ImageDraw.Draw(title_overlay)
+        tf = get_font(85)
+        words = title.split()
+        lines = []; curr = ""
+        for w in words:
+            if len(curr + w) < 18: curr += w + " "
+            else: lines.append(curr.strip()); curr = w + " "
+        lines.append(curr.strip())
+        ty = (1920 - len(lines) * 110) / 2
+        for line in lines:
+            td.text((540, ty), line, font=tf, fill=(255, 215, 0, 255), anchor="mm")
+            ty += 110
+        title_overlay_path = self.temp_dir / "title_overlay.png"
+        title_overlay.save(title_overlay_path)
         if intro_file.exists():
             print(f"✅ Usando Intro Original: {intro_file.name}")
-            # Overlay del título sobre el video de marca
-            vf = f"scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,drawtext=fontfile='{FONT_PATH}':text='{title}':fontcolor=gold:fontsize=85:x=(w-text_w)/2:y=(h/2)-150"
-            subprocess.run(["ffmpeg", "-y", "-i", str(intro_file), "-vf", vf, "-t", "6", "-c:v", "libx264", str(intro_out)], check=True)
+            subprocess.run([
+                "ffmpeg", "-y", "-i", str(intro_file), "-i", str(title_overlay_path),
+                "-filter_complex", "[0:v]scale=1080:1920,setsar=1[bg];[bg][1:v]overlay=0:0",
+                "-t", "6", "-c:v", "libx264", str(intro_out)
+            ], check=True)
         else:
-            # Fallback si no está el video, pero con estética premium
             intro_out = self.generate_text_screen(title, "intro_fallback", duration=6)
 
         # 2. RESTAURAR OUTRO ANIMADO CON LOGO
