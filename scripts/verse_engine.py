@@ -76,7 +76,6 @@ class MusiChrisVerseEngine:
         self.assets_dir = self.base_dir / "assets/panels"
         self.temp_dir = self.base_dir / "temp"
         self.renders_dir = self.base_dir / "renders"
-        self.public_dir = self.base_dir / "public"
         for d in [self.assets_dir, self.temp_dir, self.renders_dir]: d.mkdir(parents=True, exist_ok=True)
 
     def generate_image_swarm(self, prompt):
@@ -91,8 +90,6 @@ class MusiChrisVerseEngine:
         """Forja exactamente 2 paneles para optimizar cuotas."""
         print(f"🎨 Forjando secuencia de 2 paneles...")
         panel_vids = []
-        
-        # ASEGURAR AL MENOS 2 PANELES
         safe_story = list(story_data)
         while len(safe_story) < 2: safe_story.append(safe_story[-1])
         
@@ -100,17 +97,13 @@ class MusiChrisVerseEngine:
             prompt = f"Theme: {story_context}. Characters: {character_bible}. Scene: {item['prompt']}"
             print(f"🎨 Panel {i+1}/2...")
             img_data = self.generate_image_swarm(prompt)
-            
             if not img_data: raise Exception(f"Fallo en Panel {i+1}")
             
             img = Image.open(io.BytesIO(img_data)).convert('RGB')
             img = img.resize((1080, 1920), Image.Resampling.LANCZOS)
             p_img = self.temp_dir / f"p_{i}.jpg"
             img.save(p_img, quality=95)
-            
-            # Si es el primer panel, guardamos copia para miniatura en el root
-            if i == 0:
-                img.save(self.base_dir / "panel_0.jpg", quality=95)
+            if i == 0: img.save(self.base_dir / "panel_0.jpg", quality=95)
             
             p_vid = self.assets_dir / f"p_{i}.mp4"
             zoom = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30,zoompan=z='min(zoom+0.0006,1.2)':d=300:s=1080x1920:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'"
@@ -118,46 +111,45 @@ class MusiChrisVerseEngine:
             panel_vids.append(str(p_vid))
         return panel_vids
 
-    def generate_text_screen(self, text, idx):
-        out = self.temp_dir / f"text_{idx}.mp4"
-        overlay = Image.new('RGBA', (1080, 1920), (0,0,0,255))
+    def generate_text_screen(self, text, idx, duration=5, is_intro=False):
+        """Genera una pantalla de texto robusta usando PIL."""
+        out = self.temp_dir / f"screen_{idx}.mp4"
+        overlay = Image.new('RGB', (1080, 1920), (20, 10, 0) if is_intro else (0, 0, 0))
         draw = ImageDraw.Draw(overlay)
-        font = get_font(60)
-        # Word wrap simple
+        font_size = 85 if is_intro else 60
+        font = get_font(font_size)
+        
+        # Word wrap
         words = text.split()
         lines = []; curr = ""
         for w in words:
-            if len(curr + w) < 20: curr += w + " "
+            if len(curr + w) < (15 if is_intro else 22): curr += w + " "
             else: lines.append(curr.strip()); curr = w + " "
         lines.append(curr.strip())
         
-        y = (1920 - (len(lines)*110))/2
+        y = (1920 - (len(lines)*(font_size+20)))/2
         for line in lines:
             draw.text((540, y), line, font=font, fill=(255, 215, 0), anchor="mm")
-            y += 110
+            y += (font_size + 20)
+            
         ov_p = self.temp_dir / f"ov_{idx}.png"
         overlay.save(ov_p)
-        subprocess.run(["ffmpeg", "-y", "-f", "lavfi", "-i", "color=c=black:s=1080x1920:r=30:d=5", "-i", str(ov_p), "-filter_complex", "overlay,fade=t=in:st=0:d=1,fade=t=out:st=4:d=1", "-t", "5", "-c:v", "libx264", str(out)], check=True)
+        subprocess.run(["ffmpeg", "-y", "-f", "lavfi", "-i", f"color=c=black:s=1080x1920:r=30:d={duration}", "-i", str(ov_p), "-filter_complex", f"overlay,fade=t=in:st=0:d=1,fade=t=out:st={duration-1}:d=1", "-t", str(duration), "-c:v", "libx264", str(out)], check=True)
         return str(out)
 
     def assemble_video(self, panel_vids, black_texts, title, audio_url):
-        """Ensamblado Final: Intro + P1 + T1 + P2 + T2 + Outro."""
-        print("🎬 Ensamblando Video Final (2 Paneles)...")
-        intro = self.temp_dir / "intro.mp4"
-        subprocess.run(["ffmpeg", "-y", "-f", "lavfi", "-i", f"color=c=#1a0a00:s=1080x1920:d=8", "-vf", f"drawtext=text='{title}':fontcolor=gold:fontsize=80:x=(w-text_w)/2:y=(h-text_h)/2", "-c:v", "libx264", str(intro)], check=True)
+        """Ensamblado Final Blindado."""
+        print("🎬 Ensamblando Video Final...")
+        intro = self.generate_text_screen(title, "intro", duration=8, is_intro=True)
         
-        # Garantizar textos de reflexión
         safe_texts = list(black_texts)
         while len(safe_texts) < 2: safe_texts.append("@MusiChris Studio")
         
-        t1 = self.generate_text_screen(safe_texts[0], 1)
-        t2 = self.generate_text_screen(safe_texts[1], 2)
+        t1 = self.generate_text_screen(safe_texts[0], "t1", duration=6)
+        t2 = self.generate_text_screen(safe_texts[1], "t2", duration=6)
+        outro = self.generate_text_screen("@MusiChris Studio", "outro", duration=8, is_intro=True)
         
-        outro_final = self.temp_dir / "outro.mp4"
-        subprocess.run(["ffmpeg", "-y", "-f", "lavfi", "-i", "color=c=black:s=1080x1920:d=8", "-vf", "drawtext=text='@MusiChris Studio':fontcolor=gold:fontsize=70:x=(w-text_w)/2:y=(h/2)", "-c:v", "libx264", str(outro_final)], check=True)
-        
-        # Secuencia: Intro (8) + P1 (10) + T1 (5) + P2 (10) + T2 (5) + Outro (8) = 46s
-        seq = [str(intro), panel_vids[0], t1, panel_vids[1], t2, str(outro_final)]
+        seq = [intro, panel_vids[0], t1, panel_vids[1], t2, outro]
         
         concat_list = self.temp_dir / "list.txt"
         with open(concat_list, "w") as f:
