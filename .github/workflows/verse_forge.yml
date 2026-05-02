@@ -131,6 +131,7 @@ jobs:
           YOUTUBE_CREDENTIALS: ${{ secrets.YOUTUBE_CREDENTIALS }}
           YOUTUBE_TOKEN: ${{ secrets.YOUTUBE_TOKEN }}
         run: |
+          npm install googleapis
           VIDEO_FILE=$(find . -name "final_verse.mp4" | head -n 1)
           # Buscamos la primera imagen del panel como miniatura
           THUMB_FILE=$(find . -name "panel_0.jpg" | head -n 1)
