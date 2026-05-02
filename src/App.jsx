@@ -149,8 +149,8 @@ function App() {
         <div className="splash-overlay"></div>
         <div className="splash-content fade-in">
           <img src="/musichris_comic/logo_v4.png" alt="Logo" className="pulse-logo" style={{ width: '180px' }} />
-          <h1 className="splash-title" style={{ fontSize: '2.5rem' }}>MUSICHRIS</h1>
-          <p style={{ letterSpacing: '8px', fontSize: '0.6rem', opacity: 0.6, marginTop: '-10px', marginBottom: '20px' }}>COMIC ENGINE</p>
+          <h1 className="splash-title">MUSICHRIS</h1>
+          <p className="splash-subtitle">COMIC ENGINE</p>
           <div className="tap-to-start">TOCA PARA INICIAR PRODUCCIÓN</div>
         </div>
       </div>
@@ -165,46 +165,42 @@ function App() {
       </header>
 
       <div className="mode-selector">
-        <button className={mode === 'verse' ? 'active verse-glow-btn' : ''} onClick={() => setMode('verse')}>VERSE MANUAL</button>
-        <button className={mode === 'song' ? 'active verse-glow-btn' : ''} onClick={() => setMode('song')}>VERSE MUSICAL</button>
+        <button className={mode === 'verse' ? 'mode-btn active' : 'mode-btn'} onClick={() => setMode('verse')}>VERSE MANUAL</button>
+        <button className={mode === 'song' ? 'mode-btn active' : 'mode-btn'} onClick={() => setMode('song')}>VERSE MUSICAL</button>
       </div>
 
-      <main className="glass-card" style={{ marginTop: '10px' }}>
+      <main className="glass-card">
         {!isForging ? (
           <>
-            {mode === 'manual' || mode === 'verse' ? (
-              <div className="fade-in">
+            {mode === 'verse' ? (
+              <div className="verse-form fade-in">
                 <div className="input-group">
-                  <div className="input-field">
-                    <label className="label-comic">{mode === 'verse' ? 'Versículo / Referencia' : 'Título del Video'}</label>
-                    <input 
-                      type="text"
-                      placeholder={mode === 'verse' ? "Ej: Salmos 23:1" : "Ej: La Fe de Abraham"}
-                      value={storyTitle}
-                      onChange={(e) => setStoryTitle(e.target.value)}
-                      className="input-comic"
-                    />
-                  </div>
-                  <div className="input-field">
-                    <label className="label-comic">{mode === 'verse' ? 'Reflexión Profunda' : 'Idea Central o Enseñanza'}</label>
-                    <textarea 
-                      rows="4" 
-                      placeholder={mode === 'verse' ? "Describe la escena o el mensaje que quieres visualizar en 4 actos..." : "Describe la enseñanza o historia bíblica que quieres convertir en cómic..."}
-                      value={storyIdea}
-                      onChange={(e) => setStoryIdea(e.target.value)}
-                      className="input-comic"
-                    />
-                  </div>
-                  
-                  <button 
-                    className="forge-button-glow verse-glow"
-                    style={{ marginTop: '20px' }}
-                    onClick={handleForge}
-                    disabled={isForging || !storyTitle || !storyIdea}
-                  >
-                    {status || '✨ INICIAR FORJA VERSE'}
-                  </button>
+                  <label>Versículo / Referencia</label>
+                  <input 
+                    type="text"
+                    placeholder="Ej: Salmos 23:1"
+                    value={storyTitle}
+                    onChange={(e) => setStoryTitle(e.target.value)}
+                    className="input-comic"
+                  />
                 </div>
+                <div className="input-group">
+                  <label>Reflexión Profunda</label>
+                  <textarea 
+                    placeholder="Describe la escena o el mensaje espiritual..."
+                    value={storyIdea}
+                    onChange={(e) => setStoryIdea(e.target.value)}
+                    className="input-comic"
+                  />
+                </div>
+                
+                <button 
+                  className="forge-btn-premium"
+                  onClick={handleForge}
+                  disabled={!storyTitle || !storyIdea}
+                >
+                  {status || '✨ INICIAR FORJA VERSE'}
+                </button>
               </div>
             ) : (
               <div className="catalog-mode fade-in">
@@ -236,18 +232,17 @@ function App() {
                     );
                   })}
                 </div>
-                {selectedSong && !isForging && (
+                {selectedSong && (
                   <div className="selection-preview fade-in">
                     <div className="preview-card">
                       <span className="preview-label">ADN MINISTERIAL:</span>
-                      <p className="preview-verse">📖 {selectedSong.context?.verse || 'Cita no disponible'}</p>
+                      <p className="preview-verse">📖 {selectedSong.context?.verse}</p>
                       <p className="preview-focus">🎯 {selectedSong.context?.focus}</p>
                     </div>
                     
                     <button 
-                      className="forge-button-glow verse-glow"
+                      className="forge-btn-premium"
                       onClick={handleForge}
-                      disabled={isForging}
                     >
                       {status || '✨ INICIAR FORJA VERSE'}
                     </button>
@@ -268,12 +263,13 @@ function App() {
         )}
       </main>
 
-      <div className="reset-container">
-        <div className="build-info">BUILD v1.1.0</div>
+      <footer className="reset-container">
+        <div className="build-info">BUILD v1.2.0 PREMIUM</div>
         <span onClick={() => window.location.reload(true)} className="refresh-link">🔄 FORZAR ACTUALIZACIÓN</span>
-        <br/><br/>
-        <span onClick={resetToken} className="reset-link">⚙️ RECONFIGURAR ACCESO</span>
-      </div>
+        <div className="footer-links">
+          <span onClick={resetToken} className="reset-link">⚙️ RECONFIGURAR ACCESO</span>
+        </div>
+      </footer>
     </div>
   );
 }
