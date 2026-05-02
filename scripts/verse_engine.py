@@ -24,36 +24,42 @@ def safe_ffmpeg_text(text):
 # Configuración Maestra
 load_dotenv()
 HF_TOKEN = os.getenv("HF_TOKEN")
-MODEL_PRIMARY = "black-forest-labs/FLUX.1-schnell"
-MODEL_SECONDARY = "stabilityai/stable-diffusion-xl-base-1.0"
-MODEL_TERTIARY = "runwayml/stable-diffusion-v1-5"
+# Configuración de Motores
+MODEL_PRIMARY = "Pollinations AI (Free/No-Token)"
+HF_TOKEN = os.getenv("HF_TOKEN")
 
-# Cliente oficial para evitar errores de URL
-client = InferenceClient(api_key=HF_TOKEN)
+def generate_image_pollinations(prompt):
+    """Motor Gratuito de Pollinations AI - Sin cuotas de pago."""
+    try:
+        # Limpiar y codificar el prompt
+        clean_p = prompt.replace("\n", " ").strip()
+        encoded_prompt = requests.utils.quote(clean_p)
+        # Usamos un seed aleatorio para evitar imágenes repetidas
+        seed = random.randint(1, 999999)
+        url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1080&height=1920&nologo=true&seed={seed}&model=flux"
+        
+        print(f"  🔍 SUPERVISOR: Conectando con Motor Gratuito (Pollinations)...")
+        response = requests.get(url, timeout=60)
+        if response.status_code == 200:
+            return response.content
+        else:
+            print(f"  ⚠️ Error en Motor Gratuito: {response.status_code}")
+            return None
+    except Exception as e:
+        print(f"  ⚠️ Fallo en Motor Gratuito: {e}")
+        return None
 
 def call_hf_api(prompt, model_id):
-    """Usa el cliente oficial para máxima compatibilidad."""
+    """Respaldo en Hugging Face (Sujeto a cuota)."""
+    if not HF_TOKEN: return None
+    client = InferenceClient(api_key=HF_TOKEN)
     try:
-        image = client.text_to_image(
-            prompt,
-            model=model_id,
-        )
-        # Convertir PIL Image a bytes para mantener compatibilidad
+        image = client.text_to_image(prompt, model=model_id)
         img_byte_arr = io.BytesIO()
         image.save(img_byte_arr, format='PNG')
         return img_byte_arr.getvalue()
     except Exception as e:
-        error_msg = str(e)
-        if "404" in error_msg:
-            print(f"  ⚠️ Modelo {model_id} no encontrado o inactivo (404).")
-        elif "429" in error_msg or "rate limit" in error_msg.lower():
-            print(f"  ⏳ Límite de velocidad alcanzado en {model_id}. Esperando...")
-            time.sleep(10)
-        elif "loading" in error_msg.lower() or "503" in error_msg:
-            print(f"  ⏳ Modelo {model_id} cargando... esperando 20s.")
-            time.sleep(20)
-        else:
-            print(f"  ⚠️ Error en {model_id}: {error_msg[:100]}")
+        print(f"  ⚠️ HF {model_id} sigue requiriendo pago o cuota: {str(e)[:50]}")
         return None
 
 STYLE_PROMPT = (
@@ -85,22 +91,23 @@ def get_font(size):
         except:
             return ImageFont.load_default()
 
-def generate_image_hf_direct(prompt, retries=5):
-    """Guerrero de Calidad: Intenta múltiples modelos hasta lograr éxito."""
-    if not HF_TOKEN:
-        raise Exception("❌ ERROR CRÍTICO: HF_TOKEN no detectado. Operación abortada por seguridad.")
-        
-    models = [MODEL_PRIMARY, MODEL_SECONDARY, MODEL_TERTIARY]
+def generate_image_hf_direct(prompt, retries=3):
+    """Guerrero de Calidad: Ahora usa Pollinations por defecto."""
+    full_prompt = prompt + STYLE_PROMPT
     
     for attempt in range(retries):
-        for m_id in models:
-            print(f"  🔍 SUPERVISOR: Intento {attempt+1} con modelo {m_id.split('/')[-1]}...")
-            data = call_hf_api(prompt, m_id)
-            if data:
-                print(f"  ✅ SUPERVISOR: Imagen validada con éxito.")
-                return data
-        print(f"  ⚠️ SUPERVISOR: Intento {attempt+1} fallido en todos los modelos. Reintentando ciclo...")
-        time.sleep(10)
+        # Intento 1: Pollinations (Gratis e Ilimitado)
+        data = generate_image_pollinations(full_prompt)
+        if data:
+            print(f"  ✅ SUPERVISOR: Imagen generada con éxito (Motor Gratuito).")
+            return data
+            
+        # Intento 2: Respaldo HF (Solo si el anterior falla)
+        print(f"  🔍 SUPERVISOR: Reintentando con Respaldo Hugging Face...")
+        data = call_hf_api(full_prompt, "stabilityai/stable-diffusion-xl-base-1.0")
+        if data: return data
+        
+        time.sleep(5)
     
     return None
 
