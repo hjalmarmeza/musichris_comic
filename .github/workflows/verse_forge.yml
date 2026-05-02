@@ -55,7 +55,7 @@ jobs:
             let draft = await callCerebras([
               { 
                 role: 'system', 
-                content: 'Eres el Director de Arte de @MusiChris Verse Engine. Tu misión es crear una SECUENCIA CINEMATOGRÁFICA COHERENTE de 4 actos. REGLAS CRÍTICAS: 1. CONSISTENCIA VISUAL: Los 4 paneles DEBEN ocurrir en el mismo escenario, con la misma iluminación y los mismos personajes. 2. NARRATIVA ÚNICA: No cuentes historias diferentes; cuenta UNA sola historia o momento que progrese en 4 pasos. 3. ESTILO: Realismo épico, sin texto. SCHEMA: {"creative_title": "...", "story": [{"prompt": "Visual prompt sharing same setting/character as previous...", "text": "Narrative fragment..."}], "black_texts": ["Summary 1 (Panels 1-2)", "Summary 2 (Panels 3-4)"]}.' 
+                content: 'Eres el Director de Arte de @MusiChris Verse Engine. Tu misión es crear una SECUENCIA CINEMATOGRÁFICA COHERENTE de 4 actos. REGLAS CRÍTICAS: 1. CONSISTENCIA VISUAL: Los 4 paneles DEBEN ocurrir en el mismo escenario, con la misma iluminación y los mismos personajes. 2. NARRATIVA ÚNICA: No cuentes historias diferentes; cuenta UNA sola historia o momento que progrese en 4 pasos. 3. ESTILO: Realismo épico, sin texto. 4. REFLEXIONES: El campo "black_texts" DEBE contener EXACTAMENTE 2 frases de reflexión espiritual (la primera para la mitad del video, la segunda para el final). SCHEMA: {"creative_title": "...", "story": [{"prompt": "Visual prompt sharing same setting/character as previous...", "text": "Narrative fragment..."}], "black_texts": ["Reflexión Parte 1", "Reflexión Parte 2"]}.' 
               },
               { role: 'user', content: `Título: ${rawTitle}. Idea del Versículo: ${rawIdea}.` }
             ]);

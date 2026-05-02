@@ -203,7 +203,13 @@ class MusiChrisVerseEngine:
         output_path = self.renders_dir / output_filename
         intro_path = self.generate_title_video(title)
         
-        black_texts = story_data.get('black_texts', ["Pausa Reflexiva", "Final"])
+        black_texts = story_data.get('black_texts', [])
+        # Seguro de vida: Garantizar al menos 2 reflexiones
+        if not isinstance(black_texts, list): black_texts = []
+        while len(black_texts) < 2:
+            fallback = ["Caminemos Juntos en Fe", "@MusiChris Studio"]
+            black_texts.append(fallback[len(black_texts)])
+            
         black1 = self.generate_black_text_screen(black_texts[0], 1)
         black2 = self.generate_black_text_screen(black_texts[1], 2)
         
