@@ -24,35 +24,52 @@ def safe_ffmpeg_text(text):
 # Configuración Maestra
 load_dotenv()
 HF_TOKEN = os.getenv("HF_TOKEN")
-# Configuración de Motores Chinos
+# Configuración de los 5 Generales de IA
 ZHIPU_API_KEY = os.getenv("API_ZHIPU_AI")
+DEEPINFRA_API_KEY = os.getenv("DEEPINFRA_API_KEY")
+FAL_AI_API_KEY = os.getenv("FALTA_AI_API_KEY") # Usamos el nombre exacto de tu secreto
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 HF_TOKEN = os.getenv("HF_TOKEN")
 
 def generate_image_zhipu(prompt):
-    """Motor Zhipu AI (CogView-3) - Alta Fidelidad China."""
+    """Zhipu AI (CogView-3)"""
     if not ZHIPU_API_KEY: return None
     url = "https://open.bigmodel.ai/api/paas/v4/images/generations"
     headers = {"Authorization": f"Bearer {ZHIPU_API_KEY}"}
-    payload = {
-        "model": "cogview-3",
-        "prompt": prompt
-    }
     try:
-        print(f"  🔍 SUPERVISOR: Conectando con Zhipu AI (CogView-3)...")
-        response = requests.post(url, headers=headers, json=payload, timeout=60)
+        response = requests.post(url, headers=headers, json={"model": "cogview-3", "prompt": prompt}, timeout=60)
         if response.status_code == 200:
-            res_data = response.json()
-            # Zhipu devuelve una URL, hay que descargar la imagen
-            img_url = res_data['data'][0]['url']
-            img_res = requests.get(img_url, timeout=30)
-            if img_res.status_code == 200:
-                return img_res.content
-        print(f"  ⚠️ Zhipu AI falló: {response.status_code} - {response.text[:100]}")
-        return None
-    except Exception as e:
-        print(f"  ⚠️ Error en Zhipu AI: {e}")
-        return None
+            img_url = response.json()['data'][0]['url']
+            return requests.get(img_url).content
+    except: return None
+
+def generate_image_deepinfra(prompt):
+    """DeepInfra (FLUX-1-schnell)"""
+    if not DEEPINFRA_API_KEY: return None
+    url = "https://api.deepinfra.com/v1/inference/black-forest-labs/FLUX-1-schnell"
+    headers = {"Authorization": f"Bearer {DEEPINFRA_API_KEY}"}
+    try:
+        response = requests.post(url, headers=headers, json={"prompt": prompt}, timeout=60)
+        if response.status_code == 200:
+            import base64
+            # DeepInfra a veces devuelve base64 o URL
+            res = response.json()
+            if 'images' in res:
+                img_data = res['images'][0].split(",")[-1]
+                return base64.b64decode(img_data)
+    except: return None
+
+def generate_image_fal(prompt):
+    """Fal.ai (FLUX-schnell)"""
+    if not FAL_AI_API_KEY: return None
+    url = "https://fal.run/fal-ai/flux/schnell"
+    headers = {"Authorization": f"Key {FAL_AI_API_KEY}", "Content-Type": "application/json"}
+    try:
+        response = requests.post(url, headers=headers, json={"prompt": prompt}, timeout=60)
+        if response.status_code == 200:
+            img_url = response.json()['images'][0]['url']
+            return requests.get(img_url).content
+    except: return None
 
 def call_hf_api(prompt, model_id):
     """Respaldo en Hugging Face (Sujeto a cuota)."""
@@ -95,22 +112,26 @@ def get_font(size):
         except:
             return ImageFont.load_default()
 
-def generate_image_hf_direct(prompt, retries=3):
-    """Guerrero de Calidad: Prioriza Zhipu AI y luego HF."""
+def generate_image_hf_direct(prompt, retries=2):
+    """Estrategia de Enjambre: Rotación de los 5 Generales."""
     full_prompt = prompt + STYLE_PROMPT
     
+    # Lista de motores disponibles
+    engines = [
+        ("Zhipu AI", generate_image_zhipu),
+        ("DeepInfra", generate_image_deepinfra),
+        ("Fal.ai", generate_image_fal),
+        ("Hugging Face", lambda p: call_hf_api(p, "stabilityai/stable-diffusion-xl-base-1.0"))
+    ]
+    
     for attempt in range(retries):
-        # Intento 1: Zhipu AI (El nuevo motor principal)
-        data = generate_image_zhipu(full_prompt)
-        if data:
-            print(f"  ✅ SUPERVISOR: Imagen generada con éxito (Zhipu AI).")
-            return data
-            
-        # Intento 2: Respaldo HF (Solo si Zhipu falla)
-        print(f"  🔍 SUPERVISOR: Zhipu falló. Reintentando con Hugging Face...")
-        data = call_hf_api(full_prompt, "stabilityai/stable-diffusion-xl-base-1.0")
-        if data: return data
-        
+        for name, engine_func in engines:
+            print(f"  🔍 SUPERVISOR: Intentando con {name}...")
+            data = engine_func(full_prompt)
+            if data:
+                print(f"  ✅ SUPERVISOR: ¡Éxito con {name}!")
+                return data
+        print(f"  ⚠️ SUPERVISOR: Ciclo de motores fallido. Reintentando...")
         time.sleep(5)
     
     return None

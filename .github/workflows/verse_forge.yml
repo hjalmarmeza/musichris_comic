@@ -90,6 +90,8 @@ jobs:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           API_ZHIPU_AI: ${{ secrets.API_ZHIPU_AI }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DEEPINFRA_API_KEY: ${{ secrets.DEEPINFRA_API_KEY }}
+          FALTA_AI_API_KEY: ${{ secrets.FALTA_AI_API_KEY }}
         run: |
           cat > verse_runner.py << 'PYEOF'
           import os, sys, json, traceback
