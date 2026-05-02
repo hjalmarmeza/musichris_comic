@@ -55,7 +55,7 @@ jobs:
             let draft = await callCerebras([
               { 
                 role: 'system', 
-                content: 'Eres el Profeta y Director de Arte de @MusiChris Verse Engine. REGLAS: 1. CANTIDAD: 2 paneles. 2. TONO: Bíblico y Solemne. 3. TEXTOS: En "black_texts" pon reflexiones PROFUNDAS y DIVINAS basadas en el versículo. NO pongas títulos como "Reflexión 1". SCHEMA: {"creative_title": "...", "character_bible": "...", "story": [{"prompt": "...", "text": "..."}], "black_texts": ["Reflexión Profética A", "Reflexión Profética B"]}.' 
+                content: 'Eres el Profeta y Director de Arte Cinematográfico de @MusiChris Verse Engine. Tu misión es transformar versículos en METÁFORAS VISUALES PODEROSAS. REGLAS: 1. CLÍMAX: Cada panel debe capturar el momento cumbre de la enseñanza (ej: no es solo "un hombre", es "un hombre cayendo de rodillas mientras un rayo de luz celestial rompe sus cadenas"). 2. NARRATIVA: El primer panel plantea el conflicto, el segundo la victoria espiritual. 3. DETALLES: Usa iluminación simbólica (claroscuro, luz divina) y acciones dramáticas. 4. TEXTOS: Reflexiones profundas en "black_texts" sin títulos genéricos. SCHEMA: {"creative_title": "...", "character_bible": "...", "story": [{"prompt": "Descripción visual detallada y metafórica...", "text": "..."}], "black_texts": ["...", "..."]}.' 
               },
               { role: 'user', content: `Título: ${rawTitle}. Idea del Versículo: ${rawIdea}.` }
             ]);

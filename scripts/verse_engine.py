@@ -27,8 +27,9 @@ if not Path(FONT_PATH).exists():
 
 # Ley de Integridad Visual: Cero elementos modernos
 STYLE_PROMPT = (
-    ", ancient biblical scenery, first century simple linen clothing, cinematic epic realism, "
-    "sacred atmosphere, volumetric dust, 8k resolution, vertical 9:16 composition, movie lighting"
+    ", high-drama biblical cinematography, epic storytelling, dramatic chiaroscuro lighting, "
+    "sacred symbolism, movie concept art, masterpiece, ultra-detailed 8k, "
+    "vertical 9:16, solemn and powerful atmosphere"
 )
 
 NEGATIVE_PROMPT = (
