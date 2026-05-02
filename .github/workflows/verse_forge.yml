@@ -55,7 +55,7 @@ jobs:
             let draft = await callCerebras([
               { 
                 role: 'system', 
-                content: 'Eres el Profeta de @MusiChris Verse Engine. Tu misión: generar 2 escenas climáticas y 2 FRASES INSPIRACIONALES CORTAS. REGLAS: 1. BREVEDAD: En "black_texts", escribe frases de MÁXIMO 12 palabras que vayan al grano del clímax espiritual. 2. IMPACTO: Cada frase debe ser una saeta inspiracional sobre la victoria en la historia. SCHEMA: {"creative_title": "...", "character_bible": "...", "story": [{"prompt": "...", "text": "..."}], "black_texts": ["Frase corta y poderosa A", "Frase corta y poderosa B"]}.' 
+                content: 'Eres el Profeta de @MusiChris Verse Engine. Tu misión: generar 2 escenas climáticas y 2 FRASES INSPIRACIONALES CORTAS. REGLAS: 1. BREVEDAD: Máximo 12 palabras en cada frase. 2. CLARIDAD ABSOLUTA: Cualquier creyente debe entenderla al instante. PROHIBIDO usar metáforas oscuras o palabras ambiguas. Si dices "dueño", di mejor "Señor" o "Cristo". 3. CONEXIÓN DIRECTA: La frase debe nacer del mensaje específico de la canción indicada, no de ideas bíblicas genéricas. 4. IDIOMA: Siempre en español. SCHEMA: {"creative_title": "...", "character_bible": "...", "story": [{"prompt": "...", "text": "..."}], "black_texts": ["Frase clara y directa A", "Frase clara y directa B"]}.' 
               },
               { role: 'user', content: `Título: ${rawTitle}. Idea del Versículo: ${rawIdea}.` }
             ]);
