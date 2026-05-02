@@ -25,14 +25,14 @@ if not Path(FONT_PATH).exists():
     FONT_PATH = "/System/Library/Fonts/Supplemental/Verdana Bold.ttf" # Fallback Mac
 
 STYLE_PROMPT = (
-    ", cinematic film style, epic realism, volumetric lighting, 8k resolution, "
-    "highly detailed, first century biblical setting, professional movie concept art, "
-    "historically accurate, 9:16 vertical composition, solemn and sacred atmosphere"
+    ", ancient biblical world, first century clothing, cinematic epic realism, "
+    "sacred atmosphere, volumetric dust, 8k resolution, vertical 9:16 composition"
 )
 
 NEGATIVE_PROMPT = (
-    "romantic, physical intimacy, head-to-head, touching faces, modern objects, "
-    "jewelry on men, crown, glasses, blurry, low resolution, distorted faces"
+    "glasses, sunglasses, modern clothes, jewelry, wristwatch, zippers, buttons, "
+    "romantic, physical intimacy, smiling, looking at camera, distorted faces, "
+    "blurry, 3d render, cartoon"
 )
 
 def get_font(size):
@@ -74,9 +74,9 @@ class MusiChrisVerseEngine:
     def __init__(self):
         self.base_dir = Path(os.getcwd()).absolute()
         self.assets_dir = self.base_dir / "assets/panels"
+        self.branding_dir = self.base_dir / "assets/branding"
         self.temp_dir = self.base_dir / "temp"
-        self.renders_dir = self.base_dir / "renders"
-        for d in [self.assets_dir, self.temp_dir, self.renders_dir]: d.mkdir(parents=True, exist_ok=True)
+        for d in [self.assets_dir, self.temp_dir, self.branding_dir]: d.mkdir(parents=True, exist_ok=True)
 
     def generate_image_swarm(self, prompt):
         full_prompt = prompt + STYLE_PROMPT
@@ -87,14 +87,14 @@ class MusiChrisVerseEngine:
         return None
 
     def forge_panels(self, story_data, character_bible="", story_context=""):
-        """Forja exactamente 2 paneles para optimizar cuotas."""
-        print(f"🎨 Forjando secuencia de 2 paneles...")
+        print(f"🎨 Forjando 2 paneles bíblicos...")
         panel_vids = []
         safe_story = list(story_data)
         while len(safe_story) < 2: safe_story.append(safe_story[-1])
         
         for i, item in enumerate(safe_story[:2]):
-            prompt = f"Theme: {story_context}. Characters: {character_bible}. Scene: {item['prompt']}"
+            # INYECTAMOS CONTEXTO TOTAL PARA EVITAR LENTES Y MODERNIDAD
+            prompt = f"Biblical scene: {item['prompt']}. Context: {story_context}. {character_bible}. NO MODERN CLOTHES, NO GLASSES."
             print(f"🎨 Panel {i+1}/2...")
             img_data = self.generate_image_swarm(prompt)
             if not img_data: raise Exception(f"Fallo en Panel {i+1}")
@@ -111,26 +111,25 @@ class MusiChrisVerseEngine:
             panel_vids.append(str(p_vid))
         return panel_vids
 
-    def generate_text_screen(self, text, idx, duration=5, is_intro=False):
-        """Genera una pantalla de texto robusta usando PIL."""
+    def generate_text_screen(self, text, idx, duration=6):
+        """Pantalla de texto sagrado con PIL."""
         out = self.temp_dir / f"screen_{idx}.mp4"
-        overlay = Image.new('RGB', (1080, 1920), (20, 10, 0) if is_intro else (0, 0, 0))
+        overlay = Image.new('RGB', (1080, 1920), (0, 0, 0))
         draw = ImageDraw.Draw(overlay)
-        font_size = 85 if is_intro else 60
-        font = get_font(font_size)
+        font = get_font(60)
         
-        # Word wrap
+        # Word wrap robusto
         words = text.split()
         lines = []; curr = ""
         for w in words:
-            if len(curr + w) < (15 if is_intro else 22): curr += w + " "
+            if len(curr + w) < 22: curr += w + " "
             else: lines.append(curr.strip()); curr = w + " "
         lines.append(curr.strip())
         
-        y = (1920 - (len(lines)*(font_size+20)))/2
+        y = (1920 - (len(lines)*80))/2
         for line in lines:
             draw.text((540, y), line, font=font, fill=(255, 215, 0), anchor="mm")
-            y += (font_size + 20)
+            y += 80
             
         ov_p = self.temp_dir / f"ov_{idx}.png"
         overlay.save(ov_p)
@@ -138,18 +137,31 @@ class MusiChrisVerseEngine:
         return str(out)
 
     def assemble_video(self, panel_vids, black_texts, title, audio_url):
-        """Ensamblado Final Blindado."""
-        print("🎬 Ensamblando Video Final...")
-        intro = self.generate_text_screen(title, "intro", duration=8, is_intro=True)
+        """Ensamblado Final con Marca MusiChris."""
+        print("🎬 Ensamblando Video con Marca...")
         
-        safe_texts = list(black_texts)
+        # 1. Recuperar Intro y Outro originales (o crearlos si no existen)
+        intro = self.branding_dir / "intro_verse.mp4"
+        if not intro.exists():
+            # Crear un intro elegante con título si no está el video de marca
+            subprocess.run(["ffmpeg", "-y", "-f", "lavfi", "-i", "color=c=#1a0a00:s=1080x1920:d=5", "-vf", f"drawtext=text='{title}':fontcolor=gold:fontsize=80:x=(w-text_w)/2:y=(h-text_h)/2", "-c:v", "libx264", str(intro)], check=True)
+
+        outro = self.branding_dir / "outro_verse.mp4"
+        if not outro.exists():
+             subprocess.run(["ffmpeg", "-y", "-f", "lavfi", "-i", "color=c=black:s=1080x1920:d=5", "-vf", "drawtext=text='@MusiChris Studio':fontcolor=gold:fontsize=70:x=(w-text_w)/2:y=(h/2)", "-c:v", "libx264", str(outro)], check=True)
+
+        # 2. Preparar Textos (eliminando títulos basura como 'Reflexion 1')
+        safe_texts = []
+        for t in black_texts[:2]:
+            clean_t = re.sub(r'^(Reflexión|Parte|Título|Reflexion)\s*(\d+|Bíblica)\s*:?\s*', '', t, flags=re.I)
+            safe_texts.append(clean_t)
         while len(safe_texts) < 2: safe_texts.append("@MusiChris Studio")
         
-        t1 = self.generate_text_screen(safe_texts[0], "t1", duration=6)
-        t2 = self.generate_text_screen(safe_texts[1], "t2", duration=6)
-        outro = self.generate_text_screen("@MusiChris Studio", "outro", duration=8, is_intro=True)
+        t1 = self.generate_text_screen(safe_texts[0], "t1")
+        t2 = self.generate_text_screen(safe_texts[1], "t2")
         
-        seq = [intro, panel_vids[0], t1, panel_vids[1], t2, outro]
+        # Secuencia: Intro -> P1 -> T1 -> P2 -> T2 -> Outro
+        seq = [str(intro), panel_vids[0], t1, panel_vids[1], t2, str(outro)]
         
         concat_list = self.temp_dir / "list.txt"
         with open(concat_list, "w") as f:
