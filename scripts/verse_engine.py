@@ -88,22 +88,21 @@ class MusiChrisVerseEngine:
         return None
 
     def forge_panels(self, story_data, character_bible="", story_context=""):
-        """Forja exactamente 4 paneles con consistencia total."""
-        print(f"🎨 Forjando secuencia de paneles...")
+        """Forja exactamente 2 paneles para optimizar cuotas."""
+        print(f"🎨 Forjando secuencia de 2 paneles...")
         panel_vids = []
         
-        # ASEGURAR 4 PANELES (Si la IA mandó menos, repetimos el último)
+        # ASEGURAR AL MENOS 2 PANELES
         safe_story = list(story_data)
-        while len(safe_story) < 4: safe_story.append(safe_story[-1])
+        while len(safe_story) < 2: safe_story.append(safe_story[-1])
         
-        for i, item in enumerate(safe_story[:4]):
+        for i, item in enumerate(safe_story[:2]):
             prompt = f"Theme: {story_context}. Characters: {character_bible}. Scene: {item['prompt']}"
-            print(f"🎨 Panel {i+1}/4...")
+            print(f"🎨 Panel {i+1}/2...")
             img_data = self.generate_image_swarm(prompt)
             
             if not img_data: raise Exception(f"Fallo en Panel {i+1}")
             
-            # Procesamiento de Imagen a Video (Vertical 9:16)
             img = Image.open(io.BytesIO(img_data)).convert('RGB')
             img = img.resize((1080, 1920), Image.Resampling.LANCZOS)
             p_img = self.temp_dir / f"p_{i}.jpg"
@@ -120,27 +119,41 @@ class MusiChrisVerseEngine:
         overlay = Image.new('RGBA', (1080, 1920), (0,0,0,255))
         draw = ImageDraw.Draw(overlay)
         font = get_font(60)
-        lines = [text[i:i+25] for i in range(0, len(text), 25)]
-        y = (1920 - (len(lines)*100))/2
+        # Word wrap simple
+        words = text.split()
+        lines = []; curr = ""
+        for w in words:
+            if len(curr + w) < 20: curr += w + " "
+            else: lines.append(curr.strip()); curr = w + " "
+        lines.append(curr.strip())
+        
+        y = (1920 - (len(lines)*110))/2
         for line in lines:
             draw.text((540, y), line, font=font, fill=(255, 215, 0), anchor="mm")
-            y += 100
+            y += 110
         ov_p = self.temp_dir / f"ov_{idx}.png"
         overlay.save(ov_p)
         subprocess.run(["ffmpeg", "-y", "-f", "lavfi", "-i", "color=c=black:s=1080x1920:r=30:d=5", "-i", str(ov_p), "-filter_complex", "overlay,fade=t=in:st=0:d=1,fade=t=out:st=4:d=1", "-t", "5", "-c:v", "libx264", str(out)], check=True)
         return str(out)
 
     def assemble_video(self, panel_vids, black_texts, title, audio_url):
-        """Ensamblado Final del Video."""
-        print("🎬 Ensamblando Video Final...")
+        """Ensamblado Final: Intro + P1 + T1 + P2 + T2 + Outro."""
+        print("🎬 Ensamblando Video Final (2 Paneles)...")
         intro = self.temp_dir / "intro.mp4"
         subprocess.run(["ffmpeg", "-y", "-f", "lavfi", "-i", f"color=c=#1a0a00:s=1080x1920:d=8", "-vf", f"drawtext=text='{title}':fontcolor=gold:fontsize=80:x=(w-text_w)/2:y=(h-text_h)/2", "-c:v", "libx264", str(intro)], check=True)
         
-        t1 = self.generate_text_screen(black_texts[0], 1)
-        t2 = self.generate_text_screen(black_texts[1], 2)
+        # Garantizar textos de reflexión
+        safe_texts = list(black_texts)
+        while len(safe_texts) < 2: safe_texts.append("@MusiChris Studio")
         
-        # Secuencia: Intro + P1 + P2 + T1 + P3 + P4 + T2 + Outro
-        seq = [str(intro), panel_vids[0], panel_vids[1], t1, panel_vids[2], panel_vids[3], t2]
+        t1 = self.generate_text_screen(safe_texts[0], 1)
+        t2 = self.generate_text_screen(safe_texts[1], 2)
+        
+        outro_final = self.temp_dir / "outro.mp4"
+        subprocess.run(["ffmpeg", "-y", "-f", "lavfi", "-i", "color=c=black:s=1080x1920:d=8", "-vf", "drawtext=text='@MusiChris Studio':fontcolor=gold:fontsize=70:x=(w-text_w)/2:y=(h/2)", "-c:v", "libx264", str(outro_final)], check=True)
+        
+        # Secuencia: Intro (8) + P1 (10) + T1 (5) + P2 (10) + T2 (5) + Outro (8) = 46s
+        seq = [str(intro), panel_vids[0], t1, panel_vids[1], t2, str(outro_final)]
         
         concat_list = self.temp_dir / "list.txt"
         with open(concat_list, "w") as f:
