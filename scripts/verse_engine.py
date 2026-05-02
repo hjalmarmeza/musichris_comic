@@ -26,32 +26,34 @@ load_dotenv()
 HF_TOKEN = os.getenv("HF_TOKEN")
 MODEL_PRIMARY = "black-forest-labs/FLUX.1-schnell"
 MODEL_SECONDARY = "stabilityai/stable-diffusion-xl-base-1.0"
-MODEL_TERTIARY = "prompthero/openjourney"
+MODEL_TERTIARY = "runwayml/stable-diffusion-v1-5"
+
+# Cliente oficial para evitar errores de URL
+client = InferenceClient(api_key=HF_TOKEN)
 
 def call_hf_api(prompt, model_id):
-    """Llamada directa al API de Hugging Face con manejo de estados de carga."""
-    api_url = f"https://api-inference.huggingface.co/models/{model_id}"
-    headers = {"Authorization": f"Bearer {HF_TOKEN}"}
-    payload = {"inputs": prompt}
-    
+    """Usa el cliente oficial para máxima compatibilidad."""
     try:
-        response = requests.post(api_url, headers=headers, json=payload, timeout=60)
-        if response.status_code == 200:
-            # Validar que sea una imagen real y no un JSON de error
-            if response.headers.get('content-type', '').startswith('image'):
-                return response.content
-            else:
-                print(f"  ⚠️ Respuesta no es imagen ({model_id}): {response.text[:100]}")
-                return None
-        elif response.status_code == 503:
+        image = client.text_to_image(
+            prompt,
+            model=model_id,
+        )
+        # Convertir PIL Image a bytes para mantener compatibilidad
+        img_byte_arr = io.BytesIO()
+        image.save(img_byte_arr, format='PNG')
+        return img_byte_arr.getvalue()
+    except Exception as e:
+        error_msg = str(e)
+        if "404" in error_msg:
+            print(f"  ⚠️ Modelo {model_id} no encontrado o inactivo (404).")
+        elif "429" in error_msg or "rate limit" in error_msg.lower():
+            print(f"  ⏳ Límite de velocidad alcanzado en {model_id}. Esperando...")
+            time.sleep(10)
+        elif "loading" in error_msg.lower() or "503" in error_msg:
             print(f"  ⏳ Modelo {model_id} cargando... esperando 20s.")
             time.sleep(20)
-            return None
         else:
-            print(f"  ⚠️ Error API ({model_id}): {response.status_code}")
-            return None
-    except Exception as e:
-        print(f"  ⚠️ Error de conexión ({model_id}): {e}")
+            print(f"  ⚠️ Error en {model_id}: {error_msg[:100]}")
         return None
 
 STYLE_PROMPT = (
