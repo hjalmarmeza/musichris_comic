@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from huggingface_hub import InferenceClient
 from io import BytesIO
 import io
+from zhipuai import ZhipuAI
 from PIL import Image, ImageDraw, ImageFont, ImageStat
 import platform
 
@@ -32,22 +33,18 @@ DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 HF_TOKEN = os.getenv("HF_TOKEN")
 
 def generate_image_zhipu(prompt):
-    """Zhipu AI (CogView-3)"""
-    if not ZHIPU_API_KEY: 
-        print("  ⚠️ Zhipu AI: Sin llave configurada.")
-        return None
-    url = "https://open.bigmodel.ai/api/paas/v4/images/generations"
-    headers = {"Authorization": f"Bearer {ZHIPU_API_KEY}"}
+    """Zhipu AI Oficial (CogView-3)"""
+    if not ZHIPU_API_KEY: return None
     try:
-        response = requests.post(url, headers=headers, json={"model": "cogview-3", "prompt": prompt}, timeout=60)
-        if response.status_code == 200:
-            img_url = response.json()['data'][0]['url']
-            return requests.get(img_url).content
-        else:
-            print(f"  ⚠️ Zhipu AI Error {response.status_code}: {response.text[:100]}")
-            return None
+        client = ZhipuAI(api_key=ZHIPU_API_KEY)
+        response = client.images.generations(
+            model="cogview-3",
+            prompt=prompt
+        )
+        img_url = response.data[0].url
+        return requests.get(img_url).content
     except Exception as e:
-        print(f"  ⚠️ Zhipu AI Conexión: {e}")
+        print(f"  ⚠️ Zhipu SDK Error: {e}")
         return None
 
 def generate_image_deepinfra(prompt):
