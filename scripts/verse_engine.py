@@ -33,7 +33,9 @@ HF_TOKEN = os.getenv("HF_TOKEN")
 
 def generate_image_zhipu(prompt):
     """Zhipu AI (CogView-3)"""
-    if not ZHIPU_API_KEY: return None
+    if not ZHIPU_API_KEY: 
+        print("  ⚠️ Zhipu AI: Sin llave configurada.")
+        return None
     url = "https://open.bigmodel.ai/api/paas/v4/images/generations"
     headers = {"Authorization": f"Bearer {ZHIPU_API_KEY}"}
     try:
@@ -41,27 +43,40 @@ def generate_image_zhipu(prompt):
         if response.status_code == 200:
             img_url = response.json()['data'][0]['url']
             return requests.get(img_url).content
-    except: return None
+        else:
+            print(f"  ⚠️ Zhipu AI Error {response.status_code}: {response.text[:100]}")
+            return None
+    except Exception as e:
+        print(f"  ⚠️ Zhipu AI Conexión: {e}")
+        return None
 
 def generate_image_deepinfra(prompt):
     """DeepInfra (FLUX-1-schnell)"""
-    if not DEEPINFRA_API_KEY: return None
+    if not DEEPINFRA_API_KEY:
+        print("  ⚠️ DeepInfra: Sin llave configurada.")
+        return None
     url = "https://api.deepinfra.com/v1/inference/black-forest-labs/FLUX-1-schnell"
     headers = {"Authorization": f"Bearer {DEEPINFRA_API_KEY}"}
     try:
         response = requests.post(url, headers=headers, json={"prompt": prompt}, timeout=60)
         if response.status_code == 200:
             import base64
-            # DeepInfra a veces devuelve base64 o URL
             res = response.json()
             if 'images' in res:
                 img_data = res['images'][0].split(",")[-1]
                 return base64.b64decode(img_data)
-    except: return None
+        else:
+            print(f"  ⚠️ DeepInfra Error {response.status_code}: {response.text[:100]}")
+            return None
+    except Exception as e:
+        print(f"  ⚠️ DeepInfra Conexión: {e}")
+        return None
 
 def generate_image_fal(prompt):
     """Fal.ai (FLUX-schnell)"""
-    if not FAL_AI_API_KEY: return None
+    if not FAL_AI_API_KEY:
+        print("  ⚠️ Fal.ai: Sin llave configurada.")
+        return None
     url = "https://fal.run/fal-ai/flux/schnell"
     headers = {"Authorization": f"Key {FAL_AI_API_KEY}", "Content-Type": "application/json"}
     try:
@@ -69,7 +84,12 @@ def generate_image_fal(prompt):
         if response.status_code == 200:
             img_url = response.json()['images'][0]['url']
             return requests.get(img_url).content
-    except: return None
+        else:
+            print(f"  ⚠️ Fal.ai Error {response.status_code}: {response.text[:100]}")
+            return None
+    except Exception as e:
+        print(f"  ⚠️ Fal.ai Conexión: {e}")
+        return None
 
 def call_hf_api(prompt, model_id):
     """Respaldo en Hugging Face (Sujeto a cuota)."""
