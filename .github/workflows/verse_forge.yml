@@ -88,6 +88,8 @@ jobs:
       - name: 🎨 Forging Verse Mode
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          API_ZHIPU_AI: ${{ secrets.API_ZHIPU_AI }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
           cat > verse_runner.py << 'PYEOF'
           import os, sys, json, traceback

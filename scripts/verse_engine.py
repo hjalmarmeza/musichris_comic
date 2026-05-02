@@ -24,29 +24,34 @@ def safe_ffmpeg_text(text):
 # Configuración Maestra
 load_dotenv()
 HF_TOKEN = os.getenv("HF_TOKEN")
-# Configuración de Motores
-MODEL_PRIMARY = "Pollinations AI (Free/No-Token)"
+# Configuración de Motores Chinos
+ZHIPU_API_KEY = os.getenv("API_ZHIPU_AI")
+DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 HF_TOKEN = os.getenv("HF_TOKEN")
 
-def generate_image_pollinations(prompt):
-    """Motor Gratuito de Pollinations AI - Sin cuotas de pago."""
+def generate_image_zhipu(prompt):
+    """Motor Zhipu AI (CogView-3) - Alta Fidelidad China."""
+    if not ZHIPU_API_KEY: return None
+    url = "https://open.bigmodel.ai/api/paas/v4/images/generations"
+    headers = {"Authorization": f"Bearer {ZHIPU_API_KEY}"}
+    payload = {
+        "model": "cogview-3",
+        "prompt": prompt
+    }
     try:
-        # Limpiar y codificar el prompt
-        clean_p = prompt.replace("\n", " ").strip()
-        encoded_prompt = requests.utils.quote(clean_p)
-        # Usamos un seed aleatorio para evitar imágenes repetidas
-        seed = random.randint(1, 999999)
-        url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1080&height=1920&nologo=true&seed={seed}&model=flux"
-        
-        print(f"  🔍 SUPERVISOR: Conectando con Motor Gratuito (Pollinations)...")
-        response = requests.get(url, timeout=60)
+        print(f"  🔍 SUPERVISOR: Conectando con Zhipu AI (CogView-3)...")
+        response = requests.post(url, headers=headers, json=payload, timeout=60)
         if response.status_code == 200:
-            return response.content
-        else:
-            print(f"  ⚠️ Error en Motor Gratuito: {response.status_code}")
-            return None
+            res_data = response.json()
+            # Zhipu devuelve una URL, hay que descargar la imagen
+            img_url = res_data['data'][0]['url']
+            img_res = requests.get(img_url, timeout=30)
+            if img_res.status_code == 200:
+                return img_res.content
+        print(f"  ⚠️ Zhipu AI falló: {response.status_code} - {response.text[:100]}")
+        return None
     except Exception as e:
-        print(f"  ⚠️ Fallo en Motor Gratuito: {e}")
+        print(f"  ⚠️ Error en Zhipu AI: {e}")
         return None
 
 def call_hf_api(prompt, model_id):
@@ -59,7 +64,6 @@ def call_hf_api(prompt, model_id):
         image.save(img_byte_arr, format='PNG')
         return img_byte_arr.getvalue()
     except Exception as e:
-        print(f"  ⚠️ HF {model_id} sigue requiriendo pago o cuota: {str(e)[:50]}")
         return None
 
 STYLE_PROMPT = (
@@ -92,18 +96,18 @@ def get_font(size):
             return ImageFont.load_default()
 
 def generate_image_hf_direct(prompt, retries=3):
-    """Guerrero de Calidad: Ahora usa Pollinations por defecto."""
+    """Guerrero de Calidad: Prioriza Zhipu AI y luego HF."""
     full_prompt = prompt + STYLE_PROMPT
     
     for attempt in range(retries):
-        # Intento 1: Pollinations (Gratis e Ilimitado)
-        data = generate_image_pollinations(full_prompt)
+        # Intento 1: Zhipu AI (El nuevo motor principal)
+        data = generate_image_zhipu(full_prompt)
         if data:
-            print(f"  ✅ SUPERVISOR: Imagen generada con éxito (Motor Gratuito).")
+            print(f"  ✅ SUPERVISOR: Imagen generada con éxito (Zhipu AI).")
             return data
             
-        # Intento 2: Respaldo HF (Solo si el anterior falla)
-        print(f"  🔍 SUPERVISOR: Reintentando con Respaldo Hugging Face...")
+        # Intento 2: Respaldo HF (Solo si Zhipu falla)
+        print(f"  🔍 SUPERVISOR: Zhipu falló. Reintentando con Hugging Face...")
         data = call_hf_api(full_prompt, "stabilityai/stable-diffusion-xl-base-1.0")
         if data: return data
         
