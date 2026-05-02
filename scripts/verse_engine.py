@@ -106,10 +106,11 @@ STYLE_PROMPT = (
     ", cinematic film style, epic realism, volumetric lighting, 8k resolution, "
     "highly detailed, first century biblical setting, professional movie concept art, "
     "historically accurate simple linen clothing, 9:16 vertical composition, "
-    "purely paternal love, respectful fatherly interaction, holy atmosphere"
+    "purely paternal love, respectful distance, holy atmosphere, reverent interaction"
 )
 NEGATIVE_PROMPT = (
     "romantic kiss, physical intimacy, seductive, erotic, same-sex romance, "
+    "touching faces, head-to-head, close facial proximity, blurred intimacy, "
     "crown, king crown, diadem, tiara, royal headpiece, "
     "modern objects, soap dispensers, jewelry on men, earrings on men, modern accessories, "
     "sunglasses, electricity, neon, plastic, "

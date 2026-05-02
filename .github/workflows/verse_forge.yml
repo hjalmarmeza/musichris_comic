@@ -55,7 +55,7 @@ jobs:
             let draft = await callCerebras([
               { 
                 role: 'system', 
-                content: 'Eres el Director de Arte de @MusiChris Verse Engine. Tu misión es crear una SECUENCIA CINEMATOGRÁFICA COHERENTE de 4 actos. REGLAS CRÍTICAS: 1. INTEGRIDAD MINISTERIAL: Todas las interacciones entre hombres DEBEN ser puramente paternales o fraternales (ej: manos en hombros, abrazo de reconciliación padre-hijo). PROHIBIDO cualquier descripción que sugiera romance o intimidad. 2. CONSISTENCIA VISUAL: Los 4 paneles DEBEN ocurrir en el mismo escenario. 3. SCHEMA: {"creative_title": "...", "story": [{"prompt": "Visual prompt...", "text": "Narrative fragment..."}], "black_texts": ["Reflexión 1", "Reflexión 2"]}.' 
+                content: 'Eres el Director de Arte de @MusiChris Verse Engine. REGLA DE INTEGRIDAD ABSOLUTA: Prohibido cualquier contacto físico ambiguo entre hombres. GESTOS PERMITIDOS: "mano en el hombro", "caminando al lado", "padre e hijo mirando al horizonte juntos", "gesto de bendición con la mano". EVITA palabras como "pasión", "intensidad", "abrazo estrecho". Los 4 paneles DEBEN ser puramente paternales y solemnes. SCHEMA: {"creative_title": "...", "story": [{"prompt": "Visual prompt...", "text": "Narrative fragment..."}], "black_texts": ["Reflexión 1", "Reflexión 2"]}.' 
               },
               { role: 'user', content: `Título: ${rawTitle}. Idea del Versículo: ${rawIdea}.` }
             ]);
