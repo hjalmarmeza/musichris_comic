@@ -260,7 +260,7 @@ class MusiChrisVerseEngine:
             full_visual_prompt = f"Thematic Context: {story_context}. Characters: {character_bible}. Scene: {base_prompt}"
             
             print(f"🎨 Panel {i+1}/{len(story_data)} (Iniciando)...")
-            img_data = self.generate_image_hf_direct(full_visual_prompt)
+            img_data = self.generate_image_hf(full_visual_prompt)
             
             if not img_data:
                 print(f"🚨 FALLO CRÍTICO DE CALIDAD: El Panel {i+1} no pudo ser generado.")
