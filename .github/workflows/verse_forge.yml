@@ -18,6 +18,7 @@ jobs:
       - name: 🧠 AI Verse Expansion
         env:
           CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}
+          DEEPINFRA_API_KEY: ${{ secrets.DEEPINFRA_API_KEY }}
         run: |
           node << 'EOF'
           const https = require('https');
@@ -25,6 +26,18 @@ jobs:
 
           const rawTitle = `${{ github.event.client_payload.title }}`;
           const rawIdea = `${{ github.event.client_payload.description }}`;
+
+          async function callAI(messages) {
+            // Intento 1: Cerebras
+            try {
+              console.log('🧠 Intentando con Cerebras...');
+              return await callCerebras(messages);
+            } catch (err) {
+              console.warn('⚠️ Cerebras falló (tráfico alto). Intentando con DeepInfra...');
+              // Intento 2: DeepInfra (Redundancia)
+              return await callDeepInfra(messages);
+            }
+          }
 
           async function callCerebras(messages) {
             return new Promise((resolve, reject) => {
@@ -41,7 +54,7 @@ jobs:
                 res.on('data', (chunk) => data += chunk);
                 res.on('end', () => {
                   if (res.statusCode === 200) resolve(JSON.parse(data).choices[0].message.content);
-                  else reject(new Error('Cerebras Error: ' + data));
+                  else reject(new Error('Cerebras Error: ' + res.statusCode));
                 });
               });
               req.on('error', reject);
@@ -50,12 +63,36 @@ jobs:
             });
           }
 
+          async function callDeepInfra(messages) {
+            return new Promise((resolve, reject) => {
+              const req = https.request({
+                hostname: 'api.deepinfra.com',
+                path: '/v1/openai/chat/completions',
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': 'Bearer ' + process.env.DEEPINFRA_API_KEY
+                }
+              }, (res) => {
+                let data = '';
+                res.on('data', (chunk) => data += chunk);
+                res.on('end', () => {
+                  if (res.statusCode === 200) resolve(JSON.parse(data).choices[0].message.content);
+                  else reject(new Error('DeepInfra Error: ' + res.statusCode));
+                });
+              });
+              req.on('error', reject);
+              req.write(JSON.stringify({ model: 'meta-llama/Meta-Llama-3.1-8B-Instruct', messages, response_format: { type: "json_object" } }));
+              req.end();
+            });
+          }
+
           async function produceVerse() {
             console.log('📜 [VERSE ENGINE] Generando secuencia cinematográfica coherente...');
-            let draft = await callCerebras([
+            let draft = await callAI([
               { 
                 role: 'system', 
-                content: 'Eres el Profeta de @MusiChris Verse Engine. MISIÓN: Generar 2 escenas climáticas y 2 FRASES INSPIRACIONALES según el ESTÁNDAR SAGRADO. ESTÁNDAR DE FRASE (fórmula obligatoria): [Sujeto claro] + [Verbo poderoso] + [Destino espiritual]. EJEMPLOS APROBADOS: "Él es digno de todo lo que somos." | "La adoración sin límites alcanza al cielo." | "Su gracia rompe cadenas que el hombre no puede ver." | "La fe que actúa mueve montañas eternas." PROHIBIDO: metáforas oscuras, palabras ambiguas ("dueño", "extravagancia"), frases que requieran interpretación. REGLAS: 1. Máximo 12 palabras. 2. Sujeto siempre explícito. 3. Conexión directa con el mensaje de la canción indicada. 4. Siempre en español. SCHEMA: {"creative_title": "...", "character_bible": "...", "story": [{"prompt": "...", "text": "..."}], "black_texts": ["Frase estándar A", "Frase estándar B"]}.' 
+                content: 'Eres el Profeta de @MusiChris Verse Engine. MISIÓN: Generar 2 escenas climáticas y 2 FRASES INSPIRACIONALES según el ESTÁNDAR SAGRADO. SCHEMA: {"creative_title": "...", "character_bible": "...", "story": [{"prompt": "...", "text": "..."}], "black_texts": ["Frase estándar A", "Frase estándar B"]}.' 
               },
               { role: 'user', content: `Título: ${rawTitle}. Idea del Versículo: ${rawIdea}.` }
             ]);
