@@ -56,7 +56,7 @@ jobs:
             let draft = await callCerebras([
               { 
                 role: 'system', 
-                content: 'Eres el Creador de @MusiChris. SCHEMA: {"creative_title": "...", "story": [{"prompt": "...", "text": "..."}, ...], "lesson": "...", "reference": "..."}. Story: lista EXACTA de 2 objetos. REGLAS: 1. NARRATIVA BÍBLICA PURA: Identifica el evento bíblico del Versículo en el contexto. Usa los 2 paneles para contar esa historia exacta. 2. PROHIBIDO: No uses "ganchos" personales, reflexiones o preguntas. 3. PERSPECTIVA: Escribe en tercera persona como un narrador histórico. Cada panel debe ser una descripción puramente histórica/bíblica del versículo proporcionado.' 
+                content: 'Eres el Creador de @MusiChris. SCHEMA: {"creative_title": "...", "story": [{"prompt": "...", "text": "..."}, ...], "lesson": "...", "reference": "..."}. Story: lista EXACTA de 2 objetos. REGLAS: 1. NARRATIVA BÍBLICA PURA. Usa los 2 paneles para contar esa historia exacta. 2. VISUALES DIVERSOS: El "prompt" de imagen DEBE especificar un ángulo de cámara distinto para cada uno (ej. extreme close up, wide angle shot) e incluir "NO GLASSES, NO MODERN ITEMS, BARE FACE". 3. PROHIBIDO: No uses "ganchos" personales o preguntas. 4. PERSPECTIVA: Narra en tercera persona como un relator histórico. Cada panel es una descripción de los hechos del versículo.' 
               },
               { role: 'user', content: `Título: ${rawTitle}. Contexto y Versículo: ${cleanIdea}.` }
             ]);
@@ -76,7 +76,7 @@ jobs:
               draft = await callCerebras([
                 { 
                   role: 'system', 
-                  content: 'Eres el Creador de @MusiChris. Debes corregir el guion siguiendo las instrucciones del Auditor. REGLAS CRÍTICAS: 1. Tu respuesta debe ser EXCLUSIVAMENTE el objeto JSON corregido. 2. PROHIBIDO usar ganchos personales o hablarle al lector ("¿Recuerdas...?", "Has visto..."). 3. Mantén narrativa pura en tercera persona sobre los hechos bíblicos. SCHEMA: {"creative_title": "...", "story": [{"prompt": "...", "text": "..."}, ...], "lesson": "...", "reference": "..."}.' 
+                  content: 'Eres el Creador de @MusiChris. Debes corregir el guion siguiendo las instrucciones del Auditor. REGLAS CRÍTICAS: 1. Tu respuesta debe ser EXCLUSIVAMENTE el objeto JSON corregido. 2. PROHIBIDO usar ganchos personales. 3. Mantén narrativa pura en tercera persona sobre hechos bíblicos. 4. El "prompt" visual DEBE tener "NO GLASSES, NO MODERN ITEMS, BARE FACE" y un ángulo de cámara distinto para cada panel. SCHEMA: {"creative_title": "...", "story": [{"prompt": "...", "text": "..."}, ...], "lesson": "...", "reference": "..."}.' 
                 },
                 { role: 'user', content: `Guion anterior: ${draft}\n\nFeedback del Auditor: ${audit}\n\nContexto Sagrado: ${cleanIdea}\n\nGenera el JSON corregido ahora.` }
               ]);

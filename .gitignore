@@ -16,3 +16,4 @@ venv/
 .python-version
 credentials.json
 story_expanded.json
+token.json
