@@ -29,12 +29,13 @@ MODEL_ID = "black-forest-labs/FLUX.1-schnell"
 client = InferenceClient(provider="hf-inference", api_key=HF_TOKEN)
 
 STYLE_PROMPT = (
-    ", cinematic film style, epic realism, volumetric lighting, 8k resolution, "
-    "highly detailed, first century biblical setting, professional movie concept art, "
-    "historically accurate simple linen clothing, 9:16 vertical composition"
+    ", cinematic film style, diverse and dynamic atmospheric lighting, varied unique color grading, "
+    "epic realism, 8k resolution, highly detailed, authentic first century biblical setting, "
+    "professional movie concept art, historically accurate simple linen clothing, 9:16 vertical composition"
 )
 NEGATIVE_PROMPT = (
-    "crown, king crown, diadem, tiara, royal headpiece, "
+    "glasses, eyeglasses, spectacles, modern haircuts, identical faces, repetitive scenes, "
+    "same characters, identical clothing, crown, king crown, diadem, tiara, royal headpiece, "
     "modern objects, soap dispensers, jewelry on men, earrings on men, modern accessories, "
     "sunglasses, romantic kiss, seductive pose, revealing clothing, electricity, neon, plastic, "
     "glass bottle, glass flask, glass jar, decanter, glass pump bottles, "

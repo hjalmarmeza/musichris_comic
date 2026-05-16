@@ -56,9 +56,9 @@ jobs:
             let draft = await callCerebras([
               { 
                 role: 'system', 
-                content: 'Eres el Creador de @MusiChris. SCHEMA: {"creative_title": "...", "story": [{"prompt": "...", "text": "..."}, ...], "lesson": "...", "reference": "..."}. Story: lista de 8 objetos. REGLAS: 1. NARRATIVA PURA: Usa los 8 paneles para contar la historia bíblica/histórica de forma cronológica. 2. PROHIBIDO: No uses "ganchos" personales, reflexiones o preguntas al lector (ej: No digas "Recuerda cuando...", "Te has sentido..."). 3. PERSPECTIVA: Escribe en tercera persona como un narrador histórico. Cada panel debe ser un avance en la trama real.' 
+                content: 'Eres el Creador de @MusiChris. SCHEMA: {"creative_title": "...", "story": [{"prompt": "...", "text": "..."}, ...], "lesson": "...", "reference": "..."}. Story: lista EXACTA de 2 objetos. REGLAS: 1. NARRATIVA BÍBLICA PURA: Identifica el evento bíblico del Versículo en el contexto. Usa los 2 paneles para contar esa historia exacta. 2. PROHIBIDO: No uses "ganchos" personales, reflexiones o preguntas. 3. PERSPECTIVA: Escribe en tercera persona como un narrador histórico. Cada panel debe ser una descripción puramente histórica/bíblica del versículo proporcionado.' 
               },
-              { role: 'user', content: `Título: ${rawTitle}. Contexto: ${cleanIdea}.` }
+              { role: 'user', content: `Título: ${rawTitle}. Contexto y Versículo: ${cleanIdea}.` }
             ]);
 
             console.log('🛡️ [SUPERVISOR] Realizando Auditoría Teológica y Artística...');
