@@ -27,11 +27,11 @@ if not Path(FONT_PATH).exists():
 
 # Ley de Integridad Visual: Estilo 1950s
 STYLE_PROMPT = (
-    ", 1950s classic cartoon style, vintage animation, retro cartoon aesthetics, flat colors, hand-drawn look, Hanna-Barbera style, mid-century retro animation, nostalgic, colorful, clean lines, vertical 9:16, NO TEXT, NO WORDS, NO SPEECH BUBBLES, NO CAPTIONS"
+    ", premium digital illustration, professional comic book art, beautiful clean lines, vibrant colors, biblical 1st century Middle Eastern setting, ancient Israel, high quality evangelical christian art, vertical 9:16, NO TEXT, NO WORDS"
 )
 
 NEGATIVE_PROMPT = (
-    "realistic, cinematic, photographic, 3d render, modern clothes, glasses, highly detailed, text, watermark, signature, distorted faces, blurry, photorealistic"
+    "crusader, templar, medieval knight, crosses on shields, catholic iconography, ornate cathedrals, cheap cartoon, flat, blurry, distorted, modern clothes, glasses, realistic, photographic, text, watermark, signature"
 )
 
 def get_font(size):
@@ -99,7 +99,7 @@ class MusiChrisVerseEngine:
         
         for i, item in enumerate(safe_story[:2]):
             # Blindaje contra lentes y modernidad (Integridad de Personaje)
-            prompt = f"Biblical context: {story_context}. Characters: {character_bible}. Scene: {item['prompt']}"
+            prompt = f"Evangelical biblical illustration (NO medieval knights or crusaders). Biblical context: {story_context}. Characters: {character_bible}. Scene: {item['prompt']}"
             print(f"🎨 Panel {i+1}/2...")
             img_data = self.generate_image_swarm(prompt)
             if not img_data: raise Exception(f"Fallo en Panel {i+1}")
