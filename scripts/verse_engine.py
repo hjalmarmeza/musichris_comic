@@ -27,7 +27,7 @@ if not Path(FONT_PATH).exists():
 
 # Ley de Integridad Visual: Estilo 1950s
 STYLE_PROMPT = (
-    ", 1950s classic cartoon style, vintage animation, retro cartoon aesthetics, flat colors, hand-drawn look, Tom and Jerry style, nostalgic, colorful, clean lines, vertical 9:16, NO TEXT, NO WORDS, NO SPEECH BUBBLES, NO CAPTIONS"
+    ", 1950s classic cartoon style, vintage animation, retro cartoon aesthetics, flat colors, hand-drawn look, Hanna-Barbera style, mid-century retro animation, nostalgic, colorful, clean lines, vertical 9:16, NO TEXT, NO WORDS, NO SPEECH BUBBLES, NO CAPTIONS"
 )
 
 NEGATIVE_PROMPT = (
@@ -111,8 +111,59 @@ class MusiChrisVerseEngine:
             if i == 0: img.save(self.base_dir / "panel_0.jpg", quality=95)
             
             p_vid = self.assets_dir / f"p_{i}.mp4"
+            
+            # --- Generar Overlay Transparente con el Texto Narrativo ---
+            panel_text = item.get('text', '').strip()
+            overlay = Image.new('RGBA', (1080, 1920), (0,0,0,0))
+            if panel_text:
+                draw = ImageDraw.Draw(overlay)
+                f_main = get_font(60)
+                words = panel_text.split()
+                lines = []
+                curr = ""
+                for w in words:
+                    if len(curr + w) < 28: curr += w + " "
+                    else: lines.append(curr.strip()); curr = w + " "
+                lines.append(curr.strip())
+                lines = [l for l in lines if l]
+                
+                line_h = 75
+                box_w = 0
+                for l in lines:
+                    bbox = draw.textbbox((0, 0), l, font=f_main)
+                    box_w = max(box_w, bbox[2] - bbox[0])
+                box_w = min(box_w + 80, 1000)
+                box_h = len(lines) * line_h + 60
+                
+                # Posición: Parte inferior central
+                x = (1080 - box_w) / 2
+                y = 1920 - box_h - 200
+                
+                # Caja semitransparente oscura para legibilidad
+                draw.rectangle([x, y, x + box_w, y + box_h], fill=(0, 0, 0, 150), outline=(255, 215, 0), width=4)
+                
+                curr_y = y + 30
+                for line in lines:
+                    bbox = draw.textbbox((0, 0), line, font=f_main)
+                    lw = bbox[2] - bbox[0]
+                    lx = x + (box_w - lw) / 2
+                    # Sombra ligera
+                    draw.text((lx + 3, curr_y + 3), line, font=f_main, fill=(0, 0, 0, 255))
+                    draw.text((lx, curr_y), line, font=f_main, fill=(255, 215, 0))
+                    curr_y += line_h
+                    
+            ov_path = self.temp_dir / f"p_ov_{i}.png"
+            overlay.save(ov_path)
+            
+            # --- FFmpeg: Zoom al fondo + Texto estático encima ---
             zoom = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30,zoompan=z='min(zoom+0.0006,1.2)':d=300:s=1080x1920:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'"
-            subprocess.run(["ffmpeg", "-y", "-loop", "1", "-i", str(p_img), "-vf", f"{zoom},fade=t=in:st=0:d=1", "-t", "10", "-c:v", "libx264", str(p_vid)], check=True)
+            cmd = [
+                "ffmpeg", "-y", "-loop", "1", "-i", str(p_img),
+                "-i", str(ov_path),
+                "-filter_complex", f"[0:v]{zoom}[bg];[bg][1:v]overlay=0:0,fade=t=in:st=0:d=1",
+                "-t", "10", "-c:v", "libx264", str(p_vid)
+            ]
+            subprocess.run(cmd, check=True)
             panel_vids.append(str(p_vid))
         return panel_vids
 
