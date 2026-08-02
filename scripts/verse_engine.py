@@ -27,7 +27,7 @@ if not Path(FONT_PATH).exists():
 
 # Ley de Integridad Visual: Estilo 1950s
 STYLE_PROMPT = (
-    ", 1950s classic cartoon style, vintage animation, retro cartoon aesthetics, flat colors, hand-drawn look, Tom and Jerry style, nostalgic, colorful, clean lines, vertical 9:16"
+    ", 1950s classic cartoon style, vintage animation, retro cartoon aesthetics, flat colors, hand-drawn look, Tom and Jerry style, nostalgic, colorful, clean lines, vertical 9:16, NO TEXT, NO WORDS, NO SPEECH BUBBLES, NO CAPTIONS"
 )
 
 NEGATIVE_PROMPT = (
