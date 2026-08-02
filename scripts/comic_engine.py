@@ -29,20 +29,14 @@ MODEL_ID = "black-forest-labs/FLUX.1-schnell"
 client = InferenceClient(provider="hf-inference", api_key=HF_TOKEN)
 
 STYLE_PROMPT = (
-    ", cinematic film style, highly detailed ancient biblical setting, NO GLASSES, NO MODERN ITEMS, "
-    "historically accurate simple linen clothing, bare faces, varied unique lighting, "
-    "different cinematic camera angles, 8k resolution, professional concept art, 9:16 vertical composition"
+    ", classic 1950s western cartoon style, vintage cel animation, similar to Tom and Jerry, "
+    "colorful 2D animation, simple flat colors, expressive cartoon faces, hand-drawn retro cartoon, "
+    "vintage animation aesthetic, 9:16 vertical composition"
 )
 NEGATIVE_PROMPT = (
-    "glasses, eyeglasses, spectacles, modern haircuts, identical faces, repetitive scenes, "
-    "same characters, identical clothing, crown, king crown, diadem, tiara, royal headpiece, "
-    "modern objects, soap dispensers, jewelry on men, earrings on men, modern accessories, "
-    "sunglasses, romantic kiss, seductive pose, revealing clothing, electricity, neon, plastic, "
-    "glass bottle, glass flask, glass jar, decanter, glass pump bottles, "
-    "computers, phones, distorted faces, blurry, "
-    "modern architecture, tattoos, watches, cars, oil painting, "
-    "classical art, renaissance painting, da vinci style, brush strokes, canvas texture, "
-    "sketch, drawing, flat colors, low resolution"
+    "realistic, cinematic, 3d render, cg, modern architecture, highly detailed, photorealistic, "
+    "oil painting, shadows, text, signature, watermark, modern items, humans looking like real people, "
+    "anime, manga, modern western cartoon"
 )
 
 # Fuente instalada vía apt-get en el workflow (fonts-dejavu-core)
