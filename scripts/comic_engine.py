@@ -135,14 +135,24 @@ class MusiChrisComicEngine:
         return str(output_video)
 
     def get_random_bg_music(self):
-        """Selecciona una pista aleatoria del catálogo para el fondo del cómic manual."""
-        catalog_path = self.base_dir / "data/catalog.json"
+        """Selecciona una pista aleatoria de la carpeta local assets/music para el cómic manual."""
+        music_dir = self.base_dir / "assets/music"
         try:
-            with open(catalog_path, 'r', encoding='utf-8') as f:
-                catalog = json.load(f)
-            return random.choice(catalog)
+            if not music_dir.exists():
+                raise Exception(f"El directorio {music_dir} no existe.")
+            
+            mp3_files = list(music_dir.glob("*.mp3"))
+            if not mp3_files:
+                raise Exception("No hay archivos mp3 en assets/music.")
+                
+            selected = random.choice(mp3_files)
+            print(f"🎵 Música seleccionada aleatoriamente: {selected.name}")
+            return {
+                "title": selected.stem,
+                "audio_url": str(selected.absolute())
+            }
         except Exception as e:
-            print(f"⚠️ Error cargando catálogo para música aleatoria: {e}")
+            print(f"⚠️ Error cargando música local aleatoria: {e}")
             # Fallback seguro
             return {
                 "title": "Adoración Celestial",

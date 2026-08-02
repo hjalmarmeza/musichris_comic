@@ -217,7 +217,12 @@ class MusiChrisVerseEngine:
         subprocess.run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(concat_list), "-c", "copy", str(temp_v)], check=True)
         
         audio = self.temp_dir / "audio.mp3"
-        with open(audio, "wb") as f: f.write(requests.get(audio_url).content)
+        if audio_url.startswith("http://") or audio_url.startswith("https://"):
+            with open(audio, "wb") as f: f.write(requests.get(audio_url).content)
+        else:
+            # Es una ruta de archivo local
+            import shutil
+            shutil.copy2(audio_url, audio)
         
         final = self.base_dir / "final_verse.mp4"
         subprocess.run(["ffmpeg", "-y", "-i", str(temp_v), "-i", str(audio), "-c:v", "copy", "-c:a", "aac", "-shortest", str(final)], check=True)
