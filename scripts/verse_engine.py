@@ -25,18 +25,13 @@ FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 if not Path(FONT_PATH).exists():
     FONT_PATH = "/System/Library/Fonts/Supplemental/Verdana Bold.ttf"
 
-# Ley de Integridad Visual: Cero elementos modernos
+# Ley de Integridad Visual: Estilo 1950s
 STYLE_PROMPT = (
-    ", high-drama biblical cinematography, epic storytelling, dramatic chiaroscuro lighting, "
-    "ancient first-century linen tunic and sandals, no modern clothing, "
-    "sacred symbolism, movie concept art, masterpiece, ultra-detailed 8k, "
-    "vertical 9:16, solemn and powerful atmosphere"
+    ", 1950s classic cartoon style, vintage animation, retro cartoon aesthetics, flat colors, hand-drawn look, Tom and Jerry style, nostalgic, colorful, clean lines, vertical 9:16"
 )
 
 NEGATIVE_PROMPT = (
-    "glasses, sunglasses, spectacles, eyewear, modern clothes, jewelry, wristwatch, "
-    "zippers, buttons, electronics, romantic, physical intimacy, smiling, looking at camera, "
-    "distorted faces, blurry, 3d render, cartoon, digital art style"
+    "realistic, cinematic, photographic, 3d render, modern clothes, glasses, highly detailed, text, watermark, signature, distorted faces, blurry, photorealistic"
 )
 
 def get_font(size):
