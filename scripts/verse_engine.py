@@ -99,7 +99,7 @@ class MusiChrisVerseEngine:
         
         for i, item in enumerate(safe_story[:2]):
             # Blindaje contra lentes y modernidad (Integridad de Personaje)
-            prompt = f"STRICTLY NO GLASSES. Biblical context: {story_context}. Characters: {character_bible}. Scene: {item['prompt']}"
+            prompt = f"Biblical context: {story_context}. Characters: {character_bible}. Scene: {item['prompt']}"
             print(f"🎨 Panel {i+1}/2...")
             img_data = self.generate_image_swarm(prompt)
             if not img_data: raise Exception(f"Fallo en Panel {i+1}")
