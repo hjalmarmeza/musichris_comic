@@ -58,7 +58,7 @@ function App() {
     addLog('Iniciando Motor...');
 
     let payload = {};
-    if (mode === 'manual') {
+    if (mode === 'verse') {
       if (!storyTitle || !storyIdea) {
         addLog('Faltan datos manuales');
         setIsForging(false);
